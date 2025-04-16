@@ -3,9 +3,11 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useCampaigns } from '@/lib/context/campaign-context';
+import { useZones } from '@/lib/context/zone-context';
 
 export default function DashboardPage() {
-  const { activeCampaignsCount, isLoading, error } = useCampaigns();
+  const { activeCampaignsCount, isLoading: campaignsLoading, error: campaignsError } = useCampaigns();
+  const { activeZonesCount, isLoading: zonesLoading, error: zonesError } = useZones();
 
   return (
     <DashboardLayout>
@@ -17,17 +19,35 @@ export default function DashboardPage() {
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h3 className="mb-2 text-lg font-medium">Campaigns</h3>
             <div className="text-3xl font-bold">
-              {isLoading ? (
+              {campaignsLoading ? (
                 <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
-              ) : error ? (
+              ) : campaignsError ? (
                 <span className="text-destructive">!</span>
               ) : (
                 activeCampaignsCount
               )}
             </div>
             <p className="text-sm text-muted-foreground">Active campaigns</p>
-            {error && (
-              <p className="mt-2 text-xs text-destructive">{error}</p>
+            {campaignsError && (
+              <p className="mt-2 text-xs text-destructive">{campaignsError}</p>
+            )}
+          </div>
+          
+          {/* Zones Stats Card */}
+          <div className="rounded-lg border bg-card p-6 shadow-sm">
+            <h3 className="mb-2 text-lg font-medium">Zones</h3>
+            <div className="text-3xl font-bold">
+              {zonesLoading ? (
+                <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
+              ) : zonesError ? (
+                <span className="text-destructive">!</span>
+              ) : (
+                activeZonesCount
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground">Active zones</p>
+            {zonesError && (
+              <p className="mt-2 text-xs text-destructive">{zonesError}</p>
             )}
           </div>
           
