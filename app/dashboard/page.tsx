@@ -1,6 +1,37 @@
+"use client";
+
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
+import { getActiveCampaignsCount } from '@/lib/services/campaigns';
+import { useAuth } from '@/components/auth-provider';
 
 export default function DashboardPage() {
+  const [activeCampaignsCount, setActiveCampaignsCount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, apiInitialized } = useAuth();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      // Only fetch data if authenticated and API is initialized
+      if (!isAuthenticated || !apiInitialized) return;
+      
+      setIsLoading(true);
+      try {
+        const count = await getActiveCampaignsCount();
+        setActiveCampaignsCount(count);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch active campaigns:', err);
+        setError('Failed to load campaign data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [isAuthenticated, apiInitialized]);
+
   return (
     <DashboardLayout>
       <div className="container mx-auto p-6">
@@ -10,8 +41,19 @@ export default function DashboardPage() {
           {/* Campaign Stats Card */}
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h3 className="mb-2 text-lg font-medium">Campaigns</h3>
-            <div className="text-3xl font-bold">--</div>
+            <div className="text-3xl font-bold">
+              {isLoading ? (
+                <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
+              ) : error ? (
+                <span className="text-destructive">!</span>
+              ) : (
+                activeCampaignsCount
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">Active campaigns</p>
+            {error && (
+              <p className="mt-2 text-xs text-destructive">{error}</p>
+            )}
           </div>
           
           {/* Impressions Card */}

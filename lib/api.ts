@@ -38,11 +38,23 @@ export class ApiClient {
     this.headers['Authorization'] = `Bearer ${apiKey}`;
   }
 
+  /**
+   * Check if the API client has an API key
+   */
+  hasApiKey(): boolean {
+    return !!this.headers['Authorization'];
+  }
+
   async request<T>(
     endpoint: string,
     method: string = 'GET',
     data?: unknown
   ): Promise<T> {
+    // Validate that we have an API key before making requests
+    if (!this.hasApiKey()) {
+      throw new Error('API key is required. Please log in first.');
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     const options: RequestInit = {
       method,
@@ -89,8 +101,8 @@ export class ApiClient {
   }
 }
 
-// Create a default instance with environment variables
+// Create a default instance with only the base URL from environment
 export const api = new ApiClient({
   baseUrl: process.env.NEXT_PUBLIC_AD_SERVER_URL,
-  apiKey: process.env.NEXT_PUBLIC_AD_SERVER_KEY,
+  // No default API key - will be set after login
 }); 
