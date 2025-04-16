@@ -4,6 +4,7 @@ import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/components/auth-provider';
 import { CampaignProvider } from '@/lib/context/campaign-context';
 import { ZoneProvider } from '@/lib/context/zone-context';
+import { StatsProvider } from '@/lib/context/stats-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +12,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <AuthProvider>
         <CampaignProvider>
           <ZoneProvider>
-            {children}
+            <StatsProvider>
+              {children}
+            </StatsProvider>
           </ZoneProvider>
         </CampaignProvider>
       </AuthProvider>

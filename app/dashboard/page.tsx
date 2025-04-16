@@ -3,10 +3,12 @@
 import DashboardLayout from '@/components/dashboard-layout';
 import { useCampaigns } from '@/lib/context/campaign-context';
 import { useZones } from '@/lib/context/zone-context';
+import { useStats } from '@/lib/context/stats-context';
 
 export default function DashboardPage() {
   const { activeCampaignsCount, isLoading: campaignsLoading, error: campaignsError } = useCampaigns();
   const { activeZonesCount, isLoading: zonesLoading, error: zonesError } = useZones();
+  const { impressions, clicks, isLoading: statsLoading, error: statsError } = useStats();
 
   return (
     <DashboardLayout>
@@ -53,15 +55,37 @@ export default function DashboardPage() {
           {/* Impressions Card */}
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h3 className="mb-2 text-lg font-medium">Impressions</h3>
-            <div className="text-3xl font-bold">--</div>
+            <div className="text-3xl font-bold">
+              {statsLoading ? (
+                <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
+              ) : statsError ? (
+                <span className="text-destructive">!</span>
+              ) : (
+                new Intl.NumberFormat().format(impressions)
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">Last 7 days</p>
+            {statsError && (
+              <p className="mt-2 text-xs text-destructive">{statsError}</p>
+            )}
           </div>
           
           {/* Clicks Card */}
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <h3 className="mb-2 text-lg font-medium">Clicks</h3>
-            <div className="text-3xl font-bold">--</div>
+            <div className="text-3xl font-bold">
+              {statsLoading ? (
+                <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
+              ) : statsError ? (
+                <span className="text-destructive">!</span>
+              ) : (
+                new Intl.NumberFormat().format(clicks)
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">Last 7 days</p>
+            {statsError && (
+              <p className="mt-2 text-xs text-destructive">{statsError}</p>
+            )}
           </div>
         </div>
         
