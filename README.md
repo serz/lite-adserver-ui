@@ -40,8 +40,8 @@ cp .env.example .env.local
 
 Edit the `.env.local` file with your specific configuration:
 ```
-NEXT_PUBLIC_API_URL=https://your-api-url.com
-NEXT_PUBLIC_API_KEY=your-api-key-here
+NEXT_PUBLIC_AD_SERVER_URL=https://your-api-url.com
+NEXT_PUBLIC_AD_SERVER_KEY=your-api-key-here
 ```
 
 4. Start the development server

@@ -9,7 +9,7 @@ interface ApiError {
 }
 
 const DEFAULT_API_OPTIONS: ApiOptions = {
-  baseUrl: process.env.NEXT_PUBLIC_API_URL || 'https://api.liteadserver.example.com',
+  baseUrl: process.env.NEXT_PUBLIC_AD_SERVER_URL || 'https://api.liteadserver.example.com',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -91,6 +91,6 @@ export class ApiClient {
 
 // Create a default instance with environment variables
 export const api = new ApiClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_URL,
-  apiKey: process.env.NEXT_PUBLIC_API_KEY,
+  baseUrl: process.env.NEXT_PUBLIC_AD_SERVER_URL,
+  apiKey: process.env.NEXT_PUBLIC_AD_SERVER_KEY,
 }); 
