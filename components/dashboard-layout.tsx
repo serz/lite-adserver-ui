@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X, Home, BarChart3, Layers, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TimezoneToggle } from "@/components/timezone-toggle";
 import { useAuth } from "@/components/auth-provider";
 
 interface DashboardLayoutProps {
@@ -83,7 +84,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
         </nav>
-        <div className="absolute bottom-4 w-full px-4">
+        <div className="absolute bottom-4 w-full px-4 flex items-center space-x-2">
+          <TimezoneToggle />
           <ThemeToggle />
         </div>
       </div>
@@ -101,7 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-4">
               <Button 
                 variant="ghost" 
                 size="sm" 
