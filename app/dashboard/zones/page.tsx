@@ -81,7 +81,11 @@ export default function ZonesPage() {
                   <tr key={zone.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">{zone.name}</td>
                     <td className="px-4 py-3 text-sm">
-                      <Badge variant={zone.status as any}>
+                      <Badge 
+                        variant={zone.status as any} 
+                        highContrast={zone.status === 'active'} 
+                        radius="sm"
+                      >
                         {zone.status}
                       </Badge>
                     </td>

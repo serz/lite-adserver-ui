@@ -81,7 +81,11 @@ export default function CampaignsPage() {
                   <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">{campaign.name}</td>
                     <td className="px-4 py-3 text-sm">
-                      <Badge variant={campaign.status as any}>
+                      <Badge 
+                        variant={campaign.status as any} 
+                        highContrast={campaign.status === 'active'} 
+                        radius="sm"
+                      >
                         {campaign.status}
                       </Badge>
                     </td>

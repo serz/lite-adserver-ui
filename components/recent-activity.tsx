@@ -91,7 +91,12 @@ export function RecentActivity() {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">{item.name}</h4>
-              <Badge variant={item.status as any} size="sm">
+              <Badge 
+                variant={item.status as any} 
+                size="sm" 
+                radius="sm"
+                highContrast={item.status === 'active'}
+              >
                 {item.status}
               </Badge>
             </div>
