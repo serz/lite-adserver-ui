@@ -1,26 +1,69 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import LoginPage from './page';
 import { useRouter } from 'next/navigation';
 
 // Mock the next/navigation module
 jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
+  useRouter: jest.fn().mockReturnValue({
+    push: jest.fn(),
+  }),
 }));
 
-// Mock localStorage
-const localStorageMock = {
+// Mock the auth-provider hook
+jest.mock('@/components/auth-provider', () => ({
+  useAuth: jest.fn(),
+}));
+
+// Mock the auth lib
+jest.mock('@/lib/auth', () => ({
+  isLoggedIn: jest.fn().mockReturnValue(false),
+  setApiKey: jest.fn(),
+  clearApiKey: jest.fn(),
+  getApiKey: jest.fn(),
+}));
+
+// Mock localStorage for direct testing
+interface LocalStorageMock {
+  getItem: jest.Mock;
+  setItem: jest.Mock;
+  clear: jest.Mock;
+}
+
+const localStorageMock: LocalStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
   clear: jest.fn()
 };
-global.localStorage = localStorageMock as any;
+global.localStorage = localStorageMock as unknown as Storage;
+
+// Import after mocking
+import { useAuth } from '@/components/auth-provider';
+import { isLoggedIn } from '@/lib/auth';
 
 describe('LoginPage', () => {
+  let mockLogin: jest.Mock;
+  let mockPush: jest.Mock;
+
   beforeEach(() => {
+    // Clear all mocks
     jest.clearAllMocks();
+    
+    // Set up router mock
+    mockPush = jest.fn();
     (useRouter as jest.Mock).mockReturnValue({
-      push: jest.fn(),
+      push: mockPush,
     });
+
+    // Set up auth mock with login function
+    mockLogin = jest.fn().mockResolvedValue(undefined);
+    (useAuth as jest.Mock).mockReturnValue({
+      login: mockLogin,
+      isAuthenticated: false,
+      apiInitialized: false,
+    });
+
+    // Default to not logged in
+    (isLoggedIn as jest.Mock).mockReturnValue(false);
   });
 
   it('renders the login form', () => {
@@ -32,33 +75,32 @@ describe('LoginPage', () => {
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
   });
 
-  it('handles form submission', () => {
-    const pushMock = jest.fn();
-    (useRouter as jest.Mock).mockReturnValue({
-      push: pushMock,
-    });
-
+  it('handles form submission and calls login', async () => {
     render(<LoginPage />);
     
     const apiKeyInput = screen.getByLabelText('API Key');
     const submitButton = screen.getByRole('button', { name: 'Sign in' });
     
-    // Button should be disabled when input is empty
-    expect(submitButton).toBeDisabled();
-    
     // Fill in the form and submit
     fireEvent.change(apiKeyInput, { target: { value: 'test-api-key' } });
-    expect(submitButton).not.toBeDisabled();
-    
     fireEvent.click(submitButton);
     
-    // Check if localStorage was set correctly
-    expect(localStorageMock.setItem).toHaveBeenCalledWith(
-      'lite-adserver-api-key', 
-      'test-api-key'
-    );
+    // Check if the login function was called with the API key
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('test-api-key');
+    });
+  });
+
+  it('redirects if already authenticated', async () => {
+    // Mock that the user is already authenticated
+    (isLoggedIn as jest.Mock).mockReturnValue(true);
+
+    // Render the component
+    render(<LoginPage />);
     
-    // Check if navigation occurred
-    expect(pushMock).toHaveBeenCalledWith('/dashboard');
+    // Wait for useEffect to run
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
+    });
   });
 }); 

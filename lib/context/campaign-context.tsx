@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getActiveCampaigns, getActiveCampaignsCount } from '@/lib/services/campaigns';
-import { CampaignsResponse, Campaign } from '@/types/api';
+import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 
 interface CampaignContextData {
@@ -45,7 +45,6 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch campaign data:', err);
       setError('Failed to load campaign data');
     } finally {
       setIsLoading(false);

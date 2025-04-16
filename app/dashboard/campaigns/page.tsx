@@ -5,14 +5,12 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { getCampaigns } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
-import { useCampaigns } from '@/lib/context/campaign-context';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized } = useAuth();
-  const { activeCampaignsCount, recentActiveCampaigns } = useCampaigns();
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -25,7 +23,6 @@ export default function CampaignsPage() {
         setCampaigns(response.campaigns);
         setError(null);
       } catch (err) {
-        console.error('Failed to fetch campaigns:', err);
         setError('Failed to load campaigns');
       } finally {
         setIsLoading(false);

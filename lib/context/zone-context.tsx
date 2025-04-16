@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getActiveZones, getActiveZonesCount } from '@/lib/services/zones';
-import { ZonesResponse, Zone } from '@/types/api';
+import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 
 interface ZoneContextData {
@@ -45,7 +45,6 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
       
       setError(null);
     } catch (err) {
-      console.error('Failed to fetch zone data:', err);
       setError('Failed to load zone data');
     } finally {
       setIsLoading(false);

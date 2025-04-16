@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { useCampaigns } from '@/lib/context/campaign-context';
 import { useZones } from '@/lib/context/zone-context';
