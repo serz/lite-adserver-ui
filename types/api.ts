@@ -81,12 +81,10 @@ export interface TargetingRuleTypesResponse {
 // Stats types
 export interface CampaignStats {
   campaign_id: number;
-  direct_impressions: number;
   impressions: number;
   clicks: number;
   unsold: number;
   fallbacks: number;
-  ctr: number;
 }
 
 export interface StatsResponse {

@@ -5,6 +5,7 @@ import { AuthProvider } from '@/components/auth-provider';
 import { CampaignProvider } from '@/lib/context/campaign-context';
 import { ZoneProvider } from '@/lib/context/zone-context';
 import { StatsProvider } from '@/lib/context/stats-context';
+import { StatsPageProvider } from '@/lib/context/stats-page-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +14,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <CampaignProvider>
           <ZoneProvider>
             <StatsProvider>
-              {children}
+              <StatsPageProvider>
+                {children}
+              </StatsPageProvider>
             </StatsProvider>
           </ZoneProvider>
         </CampaignProvider>
