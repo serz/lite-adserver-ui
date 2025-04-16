@@ -1,6 +1,20 @@
 import { api } from '@/lib/api';
 import { CampaignsResponse } from '@/types/api';
 
+// In-memory cache for campaign data
+interface CampaignCache {
+  activeCampaigns?: {
+    data: CampaignsResponse;
+    timestamp: number;
+    expiresIn: number; // milliseconds
+  }
+}
+
+const cache: CampaignCache = {};
+
+// Cache duration (5 minutes)
+const CACHE_DURATION = 5 * 60 * 1000;
+
 /**
  * Fetch campaigns with optional filtering options
  */
@@ -10,7 +24,21 @@ export async function getCampaigns(options?: {
   offset?: number;
   sort?: string;
   order?: 'asc' | 'desc';
+  useCache?: boolean;
 }): Promise<CampaignsResponse> {
+  // Check if we can use cached data for active campaigns
+  if (
+    options?.useCache !== false &&
+    options?.status === 'active' && 
+    options?.limit === 1 && 
+    options?.sort === 'created_at' && 
+    options?.order === 'desc' &&
+    cache.activeCampaigns &&
+    Date.now() - cache.activeCampaigns.timestamp < cache.activeCampaigns.expiresIn
+  ) {
+    return cache.activeCampaigns.data;
+  }
+
   // Build query parameters
   const queryParams = new URLSearchParams();
   
@@ -35,7 +63,23 @@ export async function getCampaigns(options?: {
   }
   
   const endpoint = `/api/campaigns${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  return await api.get<CampaignsResponse>(endpoint);
+  const response = await api.get<CampaignsResponse>(endpoint);
+
+  // Cache active campaigns data
+  if (
+    options?.status === 'active' && 
+    options?.limit === 1 && 
+    options?.sort === 'created_at' && 
+    options?.order === 'desc'
+  ) {
+    cache.activeCampaigns = {
+      data: response,
+      timestamp: Date.now(),
+      expiresIn: CACHE_DURATION
+    };
+  }
+
+  return response;
 }
 
 /**
@@ -46,7 +90,8 @@ export async function getActiveCampaigns(limit: number = 10): Promise<CampaignsR
     status: 'active',
     limit,
     sort: 'created_at',
-    order: 'desc'
+    order: 'desc',
+    useCache: true
   });
 }
 

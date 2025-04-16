@@ -5,12 +5,14 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { getCampaigns } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { useCampaigns } from '@/lib/context/campaign-context';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized } = useAuth();
+  const { activeCampaignsCount, recentActiveCampaigns } = useCampaigns();
 
   useEffect(() => {
     const fetchCampaigns = async () => {
@@ -77,7 +79,7 @@ export default function CampaignsPage() {
                 </tr>
               </thead>
               <tbody>
-                {campaigns.map((campaign) => (
+                {campaigns.map(campaign => (
                   <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">{campaign.name}</td>
                     <td className="px-4 py-3 text-sm">

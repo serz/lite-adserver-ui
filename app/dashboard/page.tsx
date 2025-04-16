@@ -2,35 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
-import { getActiveCampaignsCount } from '@/lib/services/campaigns';
-import { useAuth } from '@/components/auth-provider';
+import { useCampaigns } from '@/lib/context/campaign-context';
 
 export default function DashboardPage() {
-  const [activeCampaignsCount, setActiveCampaignsCount] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, apiInitialized } = useAuth();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      // Only fetch data if authenticated and API is initialized
-      if (!isAuthenticated || !apiInitialized) return;
-      
-      setIsLoading(true);
-      try {
-        const count = await getActiveCampaignsCount();
-        setActiveCampaignsCount(count);
-        setError(null);
-      } catch (err) {
-        console.error('Failed to fetch active campaigns:', err);
-        setError('Failed to load campaign data');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [isAuthenticated, apiInitialized]);
+  const { activeCampaignsCount, isLoading, error } = useCampaigns();
 
   return (
     <DashboardLayout>
