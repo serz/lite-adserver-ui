@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { getZones } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { Badge } from '@/components/ui/badge';
 
 export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -80,13 +81,9 @@ export default function ZonesPage() {
                   <tr key={zone.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">{zone.name}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs ${
-                        zone.status === 'active' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                          : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
-                      }`}>
+                      <Badge variant={zone.status as any}>
                         {zone.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm">{zone.site_url}</td>
                     <td className="px-4 py-3 text-sm">{zone.traffic_back_url || 'N/A'}</td>

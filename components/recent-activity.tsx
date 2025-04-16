@@ -7,6 +7,7 @@ import { useZones } from '@/lib/context/zone-context';
 import { Campaign, Zone } from '@/types/api';
 import { formatDate } from '@/lib/timezone';
 import { Layers, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 type ActivityItem = {
   id: number;
@@ -90,9 +91,9 @@ export function RecentActivity() {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <h4 className="font-medium">{item.name}</h4>
-              <span className={`text-xs ${getStatusColor(item.status)}`}>
+              <Badge variant={item.status as any} size="sm">
                 {item.status}
-              </span>
+              </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
               {item.type === 'campaign' ? 'Campaign' : 'Zone'} • Created {formatDate(item.created_at, { dateStyle: 'medium' })}
@@ -102,19 +103,4 @@ export function RecentActivity() {
       ))}
     </div>
   );
-}
-
-// Helper to determine the color based on status
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'active':
-      return 'text-green-600 dark:text-green-400';
-    case 'inactive':
-    case 'paused':
-      return 'text-amber-600 dark:text-amber-400';
-    case 'completed':
-      return 'text-blue-600 dark:text-blue-400';
-    default:
-      return 'text-muted-foreground';
-  }
 } 

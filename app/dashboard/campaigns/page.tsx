@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { getCampaigns } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { Badge } from '@/components/ui/badge';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -80,15 +81,9 @@ export default function CampaignsPage() {
                   <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50">
                     <td className="px-4 py-3 text-sm">{campaign.name}</td>
                     <td className="px-4 py-3 text-sm">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs ${
-                        campaign.status === 'active' 
-                          ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' 
-                          : campaign.status === 'paused' 
-                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300' 
-                          : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
-                      }`}>
+                      <Badge variant={campaign.status as any}>
                         {campaign.status}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm">{formatDate(campaign.start_date)}</td>
                     <td className="px-4 py-3 text-sm">{campaign.end_date ? formatDate(campaign.end_date) : 'N/A'}</td>
