@@ -7,7 +7,7 @@ import { useZones } from '@/lib/context/zone-context';
 import { Campaign, Zone } from '@/types/api';
 import { formatDate } from '@/lib/timezone';
 import { Layers, Users } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 
 type ActivityItem = {
   id: number;
@@ -44,6 +44,22 @@ export function RecentActivity() {
       url: `/dashboard/zones/${zone.id}`,
     })),
   ].sort((a, b) => b.created_at - a.created_at).slice(0, 5);
+
+  // Helper function to map status to variant
+  const getStatusVariant = (status: string): BadgeProps['variant'] => {
+    switch (status) {
+      case 'active':
+        return 'active';
+      case 'paused':
+        return 'paused';
+      case 'completed':
+        return 'completed';
+      case 'inactive':
+        return 'inactive';
+      default:
+        return 'default';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -92,7 +108,7 @@ export function RecentActivity() {
             <div className="flex items-center justify-between">
               <h4 className="font-medium">{item.name}</h4>
               <Badge 
-                variant={item.status as any} 
+                variant={getStatusVariant(item.status)} 
                 size="sm" 
                 radius="sm"
                 highContrast={item.status === 'active'}

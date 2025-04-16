@@ -3,9 +3,9 @@
 import DashboardLayout from '@/components/dashboard-layout';
 import { StatsTable } from '@/components/stats-table';
 import { useStatsPage } from '@/lib/context/stats-page-context';
-import { formatDate } from '@/lib/timezone';
 import { useAuth } from '@/components/auth-provider';
 import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
   Select,
   SelectContent,
@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DateRange } from 'react-day-picker';
+import { useCallback } from 'react';
 
 type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country';
 
@@ -24,14 +26,21 @@ export default function StatsPage() {
     isLoading,
     error,
     dateRange,
+    setDateRange,
     groupBy,
     setGroupBy,
     refetch
   } = useStatsPage();
 
-  // Format date range for display
-  const formattedFrom = formatDate(dateRange.from, { dateStyle: 'medium' });
-  const formattedTo = formatDate(dateRange.to, { dateStyle: 'medium' });
+  // Handle date range change
+  const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
+    if (range?.from) {
+      setDateRange({
+        from: range.from,
+        to: range.to || range.from,
+      });
+    }
+  }, [setDateRange]);
 
   // Handle authentication issues
   if (!isAuthenticated || !apiInitialized) {
@@ -64,32 +73,36 @@ export default function StatsPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center">
             <div>
               <h3 className="text-sm font-medium mb-1">Date Range</h3>
-              <div className="text-sm text-muted-foreground">
-                {formattedFrom} - {formattedTo}
-              </div>
+              <DateRangePicker 
+                value={{
+                  from: dateRange.from,
+                  to: dateRange.to
+                }}
+                onChange={handleDateRangeChange}
+              />
+            </div>
+            
+            <div>
+              <h3 className="text-sm font-medium mb-1">Group By</h3>
+              <Select 
+                value={groupBy} 
+                onValueChange={(value: GroupByOption) => setGroupBy(value)}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Group by..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="date">Date</SelectItem>
+                    <SelectItem value="campaign_id">Campaign</SelectItem>
+                    <SelectItem value="zone_id">Zone</SelectItem>
+                    <SelectItem value="country">Country</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="ml-auto flex items-center gap-2">
-              <div>
-                <h3 className="text-sm font-medium mb-1">Group By</h3>
-                <Select 
-                  value={groupBy} 
-                  onValueChange={(value: GroupByOption) => setGroupBy(value)}
-                >
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Group by..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="date">Date</SelectItem>
-                      <SelectItem value="campaign_id">Campaign</SelectItem>
-                      <SelectItem value="zone_id">Zone</SelectItem>
-                      <SelectItem value="country">Country</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              
+            <div className="ml-auto flex items-center gap-2">  
               <Button 
                 variant="outline" 
                 size="sm" 

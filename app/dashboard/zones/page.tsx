@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/dashboard-layout';
 import { getZones } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
-import { Badge } from '@/components/ui/badge';
+import { Badge, BadgeProps } from '@/components/ui/badge';
 
 export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -36,6 +36,18 @@ export default function ZonesPage() {
   // Format date to readable format
   const formatDate = (timestamp: number): string => {
     return new Date(timestamp).toLocaleDateString();
+  };
+
+  // Helper function to map status to variant
+  const getStatusVariant = (status: string): BadgeProps['variant'] => {
+    switch (status) {
+      case 'active':
+        return 'active';
+      case 'inactive':
+        return 'inactive';
+      default:
+        return 'default';
+    }
   };
 
   return (
@@ -82,7 +94,7 @@ export default function ZonesPage() {
                     <td className="px-4 py-3 text-sm">{zone.name}</td>
                     <td className="px-4 py-3 text-sm">
                       <Badge 
-                        variant={zone.status as any} 
+                        variant={getStatusVariant(zone.status)} 
                         highContrast={zone.status === 'active'} 
                         radius="sm"
                       >

@@ -64,12 +64,17 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     }
   }, [dateRange, campaignIds, zoneIds, groupBy, isAuthenticated, apiInitialized]);
 
+  // Update the date range and trigger a refetch
+  const handleDateRangeUpdate = useCallback((range: { from: Date; to: Date }) => {
+    setDateRange(range);
+  }, []);
+
   // Fetch stats when filters change and auth is initialized
   useEffect(() => {
     if (apiInitialized) {
       fetchStats();
     }
-  }, [fetchStats, apiInitialized]);
+  }, [fetchStats, apiInitialized, dateRange]); // Adding dateRange as a dependency to ensure it refetches
 
   return (
     <StatsPageContext.Provider
@@ -78,7 +83,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         error,
         dateRange,
-        setDateRange,
+        setDateRange: handleDateRangeUpdate,
         campaignIds,
         setCampaignIds,
         zoneIds,
