@@ -6,6 +6,7 @@ import { getCampaigns } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import { formatDate } from '@/lib/date-utils';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -32,11 +33,6 @@ export default function CampaignsPage() {
 
     fetchCampaigns();
   }, [isAuthenticated, apiInitialized]);
-
-  // Format date to readable format
-  const formatDate = (timestamp: number): string => {
-    return new Date(timestamp).toLocaleDateString();
-  };
 
   // Helper function to map status to variant
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
@@ -106,7 +102,7 @@ export default function CampaignsPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-sm">{formatDate(campaign.start_date)}</td>
-                    <td className="px-4 py-3 text-sm">{campaign.end_date ? formatDate(campaign.end_date) : 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm">{formatDate(campaign.end_date, { fallback: 'N/A' })}</td>
                     <td className="px-4 py-3 text-sm">{formatDate(campaign.created_at)}</td>
                   </tr>
                 ))}

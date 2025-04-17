@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useCampaigns } from '@/lib/context/campaign-context';
 import { useZones } from '@/lib/context/zone-context';
 import { Campaign, Zone } from '@/types/api';
-import { formatDate } from '@/lib/timezone';
 import { Layers, Users } from 'lucide-react';
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import { formatDate } from '@/lib/date-utils';
 
 type ActivityItem = {
   id: number;
@@ -117,7 +117,7 @@ export function RecentActivity() {
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              {item.type === 'campaign' ? 'Campaign' : 'Zone'} • Created {formatDate(item.created_at, { dateStyle: 'medium' })}
+              {item.type === 'campaign' ? 'Campaign' : 'Zone'} • Created {formatDate(item.created_at, { format: 'MMM dd, yyyy' })}
             </p>
           </div>
         </Link>

@@ -6,6 +6,7 @@ import { getZones } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import { formatDate } from '@/lib/date-utils';
 
 export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -32,11 +33,6 @@ export default function ZonesPage() {
 
     fetchZones();
   }, [isAuthenticated, apiInitialized]);
-
-  // Format date to readable format
-  const formatDate = (timestamp: number): string => {
-    return new Date(timestamp).toLocaleDateString();
-  };
 
   // Helper function to map status to variant
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
