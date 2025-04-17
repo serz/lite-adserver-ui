@@ -42,6 +42,12 @@ export default function StatsPage() {
     }
   }, [setDateRange]);
 
+  // Force refresh bypassing cache
+  const handleRefresh = useCallback(() => {
+    // Pass false to bypass cache when manually refreshing
+    refetch(false);
+  }, [refetch]);
+
   // Handle authentication issues
   if (!isAuthenticated || !apiInitialized) {
     return (
@@ -106,7 +112,7 @@ export default function StatsPage() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => refetch()}
+                onClick={handleRefresh}
                 disabled={isLoading}
               >
                 Refresh
@@ -121,7 +127,7 @@ export default function StatsPage() {
             <div className="p-4 text-center text-destructive bg-destructive/10 rounded-md">
               {error}
               <div className="mt-2">
-                <Button onClick={() => refetch()} variant="outline" size="sm">
+                <Button onClick={handleRefresh} variant="outline" size="sm">
                   Try Again
                 </Button>
               </div>

@@ -20,7 +20,7 @@ interface StatsPageContextType {
   setZoneIds: (ids: number[]) => void;
   groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country';
   setGroupBy: (groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country') => void;
-  refetch: () => Promise<void>;
+  refetch: (useCache?: boolean) => Promise<void>;
 }
 
 const StatsPageContext = createContext<StatsPageContextType | undefined>(undefined);
@@ -36,7 +36,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const [zoneIds, setZoneIds] = useState<number[]>([]);
   const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country'>('date');
   
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (useCache: boolean = true) => {
     if (!isAuthenticated || !apiInitialized) {
       setError('Authentication required. Please ensure you are logged in.');
       setIsLoading(false);
@@ -53,7 +53,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
         campaignIds: campaignIds.length > 0 ? campaignIds : undefined,
         zoneIds: zoneIds.length > 0 ? zoneIds : undefined,
         groupBy: groupBy,
-        useCache: true
+        useCache: useCache
       });
       
       setStats(response);
@@ -74,7 +74,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     if (apiInitialized) {
       fetchStats();
     }
-  }, [fetchStats, apiInitialized, dateRange]); // Adding dateRange as a dependency to ensure it refetches
+  }, [fetchStats, apiInitialized, dateRange]);
 
   return (
     <StatsPageContext.Provider
@@ -100,10 +100,8 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
 
 export function useStatsPage() {
   const context = useContext(StatsPageContext);
-  
   if (context === undefined) {
     throw new Error('useStatsPage must be used within a StatsPageProvider');
   }
-  
   return context;
 } 
