@@ -2,10 +2,34 @@
 
 import * as React from "react"
 import { DayPicker } from "react-day-picker"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
+
+// Custom navigation buttons components
+function PreviousMonthButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button 
+      {...props} 
+      className="h-7 w-7 bg-muted text-muted-foreground border border-input rounded-md flex items-center justify-center hover:bg-accent hover:text-accent-foreground"
+    >
+      <ChevronLeft className="h-4 w-4" />
+    </button>
+  )
+}
+
+function NextMonthButton(props: React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  return (
+    <button 
+      {...props} 
+      className="h-7 w-7 bg-muted text-muted-foreground border border-input rounded-md flex items-center justify-center hover:bg-accent hover:text-accent-foreground"
+    >
+      <ChevronRight className="h-4 w-4" />
+    </button>
+  )
+}
 
 function Calendar({
   className,
@@ -23,7 +47,7 @@ function Calendar({
         caption: "flex justify-center pt-1 relative items-center",
         caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
-        nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+        nav_button: "h-7 w-7 bg-transparent p-0",
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-1",
@@ -39,6 +63,10 @@ function Calendar({
         day_range_middle: "bg-accent",
         day_hidden: "invisible",
         ...classNames,
+      }}
+      components={{
+        PreviousMonthButton: PreviousMonthButton,
+        NextMonthButton: NextMonthButton
       }}
       {...props}
     />
