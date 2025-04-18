@@ -54,7 +54,7 @@ export async function getStats(options: {
   useCache?: boolean;
   campaignIds?: number[];
   zoneIds?: number[];
-  groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country';
+  groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 }): Promise<StatsResponse> {
   const now = Date.now();
   const isLast7DaysRequest = isLast7DaysRange(options.from, options.to || now);
@@ -170,7 +170,7 @@ export async function getStatsForPeriod(options: {
   to?: Date;
   campaignIds?: number[];
   zoneIds?: number[];
-  groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country';
+  groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
   useCache?: boolean;
 }): Promise<StatsResponse> {
   // Use default date range if not provided

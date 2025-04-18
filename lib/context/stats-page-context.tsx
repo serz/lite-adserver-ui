@@ -18,8 +18,8 @@ interface StatsPageContextType {
   setCampaignIds: (ids: number[]) => void;
   zoneIds: number[];
   setZoneIds: (ids: number[]) => void;
-  groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country';
-  setGroupBy: (groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country') => void;
+  groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
+  setGroupBy: (groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id') => void;
   refetch: (useCache?: boolean) => Promise<void>;
 }
 
@@ -34,7 +34,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(defaultRange);
   const [campaignIds, setCampaignIds] = useState<number[]>([]);
   const [zoneIds, setZoneIds] = useState<number[]>([]);
-  const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country'>('date');
+  const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id'>('date');
   
   const fetchStats = useCallback(async (useCache: boolean = true) => {
     if (!isAuthenticated || !apiInitialized) {

@@ -17,7 +17,7 @@ import {
 import { DateRange } from 'react-day-picker';
 import { useCallback } from 'react';
 
-type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country';
+type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 
 export default function StatsPage() {
   const { isAuthenticated, apiInitialized } = useAuth();
@@ -103,6 +103,7 @@ export default function StatsPage() {
                     <SelectItem value="campaign_id">Campaign</SelectItem>
                     <SelectItem value="zone_id">Zone</SelectItem>
                     <SelectItem value="country">Country</SelectItem>
+                    <SelectItem value="sub_id">Sub ID</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>

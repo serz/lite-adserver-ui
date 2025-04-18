@@ -14,7 +14,7 @@ import { formatDate } from '@/lib/timezone';
 
 interface StatsTableProps {
   data: StatsResponse | null;
-  groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country';
+  groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
   isLoading: boolean;
 }
 
@@ -24,6 +24,7 @@ type StatItem = {
   campaign_id?: number;
   zone_id?: number;
   country?: string;
+  sub_id?: string;
   impressions: number;
   clicks: number;
   unsold: number;
@@ -61,6 +62,8 @@ export function StatsTable({ data, groupBy, isLoading }: StatsTableProps) {
         return 'Zone ID';
       case 'country':
         return 'Country';
+      case 'sub_id':
+        return 'Sub ID';
       default:
         return 'Group';
     }
