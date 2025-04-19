@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { getActiveCampaigns, getActiveCampaignsCount } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
@@ -28,36 +28,51 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const [recentActiveCampaigns, setRecentActiveCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, apiInitialized } = useAuth();
+  const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
+  const dataFetchedRef = useRef(false);
 
   const fetchCampaignData = useCallback(async () => {
-    if (!isAuthenticated || !apiInitialized) return;
+    if (!isAuthReady || !isAuthenticated || !apiInitialized) {
+      console.log('Campaign context: Auth not ready, not authenticated, or API not initialized');
+      return;
+    }
     
+    if (dataFetchedRef.current) {
+      console.log('Campaign context: Data already fetched, skipping');
+      return;
+    }
+    
+    console.log('Campaign context: Fetching campaign data...');
     setIsLoading(true);
     try {
       // Fetch active campaigns count (uses cached data if available)
       const count = await getActiveCampaignsCount();
+      console.log('Campaign context: Received campaign count:', count);
       setActiveCampaignsCount(count);
       
       // Fetch recent active campaigns
       const activeCampaignsResponse = await getActiveCampaigns(3);
+      console.log('Campaign context: Received recent campaigns:', activeCampaignsResponse.campaigns);
       setRecentActiveCampaigns(activeCampaignsResponse.campaigns);
       
       setError(null);
+      dataFetchedRef.current = true;
     } catch (err) {
+      console.error('Campaign context: Error fetching campaign data:', err);
       setError('Failed to load campaign data');
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthReady, isAuthenticated, apiInitialized]);
 
   useEffect(() => {
-    if (isAuthenticated && apiInitialized) {
+    if (isAuthReady && isAuthenticated && apiInitialized) {
       fetchCampaignData();
     }
-  }, [fetchCampaignData, isAuthenticated, apiInitialized]);
+  }, [fetchCampaignData, isAuthReady, isAuthenticated, apiInitialized]);
 
   const refetchCampaigns = useCallback(async () => {
+    dataFetchedRef.current = false;
     await fetchCampaignData();
   }, [fetchCampaignData]);
 

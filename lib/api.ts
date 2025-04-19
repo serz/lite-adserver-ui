@@ -52,6 +52,7 @@ export class ApiClient {
   ): Promise<T> {
     // Validate that we have an API key before making requests
     if (!this.hasApiKey()) {
+      console.error('API client: No API key found. Authorization will fail.');
       throw new Error('API key is required. Please log in first.');
     }
 
@@ -65,22 +66,36 @@ export class ApiClient {
       options.body = JSON.stringify(data);
     }
 
-    const response = await fetch(url, options);
-    const contentType = response.headers.get('content-type');
+    console.log(`API client: Making ${method} request to ${endpoint}`);
     
-    if (!response.ok) {
-      if (contentType?.includes('application/json')) {
-        const errorData = await response.json() as ApiError;
-        throw new Error(errorData.error || `API error (${response.status})`);
+    try {
+      const response = await fetch(url, options);
+      const contentType = response.headers.get('content-type');
+      
+      if (!response.ok) {
+        if (contentType?.includes('application/json')) {
+          const errorData = await response.json() as ApiError;
+          const errorMessage = errorData.error || `API error (${response.status})`;
+          console.error(`API client: Request failed with status ${response.status}:`, errorMessage);
+          throw new Error(errorMessage);
+        }
+        console.error(`API client: Request failed with status ${response.status}`);
+        throw new Error(`API error (${response.status})`);
       }
-      throw new Error(`API error (${response.status})`);
-    }
 
-    if (contentType?.includes('application/json')) {
-      return response.json();
-    }
+      if (contentType?.includes('application/json')) {
+        const data = await response.json();
+        console.log(`API client: Received JSON response from ${endpoint}`);
+        return data;
+      }
 
-    return response.text() as unknown as T;
+      const textData = await response.text();
+      console.log(`API client: Received text response from ${endpoint}`);
+      return textData as unknown as T;
+    } catch (error) {
+      console.error(`API client: Error during request to ${endpoint}:`, error);
+      throw error;
+    }
   }
 
   // Helper methods for common HTTP verbs
