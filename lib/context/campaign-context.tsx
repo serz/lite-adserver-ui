@@ -49,11 +49,13 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, apiInitialized]);
+  }, []);
 
   useEffect(() => {
-    fetchCampaignData();
-  }, [fetchCampaignData]);
+    if (isAuthenticated && apiInitialized) {
+      fetchCampaignData();
+    }
+  }, [fetchCampaignData, isAuthenticated, apiInitialized]);
 
   const refetchCampaigns = useCallback(async () => {
     await fetchCampaignData();

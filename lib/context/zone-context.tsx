@@ -49,11 +49,13 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthenticated, apiInitialized]);
+  }, []);
 
   useEffect(() => {
-    fetchZoneData();
-  }, [fetchZoneData]);
+    if (isAuthenticated && apiInitialized) {
+      fetchZoneData();
+    }
+  }, [fetchZoneData, isAuthenticated, apiInitialized]);
 
   const refetchZones = useCallback(async () => {
     await fetchZoneData();

@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { getZones } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
+import { ZoneDialog } from '@/components/zone-dialog';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 export default function ZonesPage() {
   const [zones, setZones] = useState<Zone[]>([]);
@@ -14,25 +17,39 @@ export default function ZonesPage() {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized } = useAuth();
 
-  useEffect(() => {
-    const fetchZones = async () => {
-      // Only fetch data if authenticated and API is initialized
-      if (!isAuthenticated || !apiInitialized) return;
+  const fetchZones = useCallback(async () => {
+    // Only fetch data if authenticated and API is initialized
+    if (!isAuthenticated || !apiInitialized) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Always fetch fresh data, no caching
+      const response = await getZones({ 
+        limit: 20, 
+        useCache: false,
+        sort: 'created_at',
+        order: 'desc',
+        // Add timestamp to query to prevent browser caching
+        _t: Date.now().toString()
+      });
       
-      setIsLoading(true);
-      try {
-        const response = await getZones({ limit: 20 });
-        setZones(response.zones);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load zones');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setZones(response.zones);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load zones. Please try refreshing.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-    fetchZones();
-  }, [isAuthenticated, apiInitialized]);
+  // Initial fetch when component mounts and auth is ready
+  useEffect(() => {
+    // Only run this effect when both auth conditions are met
+    if (isAuthenticated && apiInitialized) {
+      fetchZones();
+    }
+  }, [fetchZones, isAuthenticated, apiInitialized]);
 
   // Helper function to map status to variant
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
@@ -46,19 +63,44 @@ export default function ZonesPage() {
     }
   };
 
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    await fetchZones();
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Zones</h1>
-          <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
-            New Zone
-          </button>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">Zones</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              title="Refresh zones"
+            >
+              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+          <ZoneDialog 
+            triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90" 
+            onZoneCreated={fetchZones}
+          />
         </div>
 
         {error && (
           <div className="mb-6 rounded-md bg-destructive/15 p-4 text-destructive">
             {error}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2" 
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
           </div>
         )}
 
@@ -97,7 +139,7 @@ export default function ZonesPage() {
                         {zone.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm">{zone.site_url}</td>
+                    <td className="px-4 py-3 text-sm">{zone.site_url || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">{zone.traffic_back_url || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">{formatDate(zone.created_at)}</td>
                   </tr>

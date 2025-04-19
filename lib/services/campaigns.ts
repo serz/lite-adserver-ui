@@ -25,6 +25,7 @@ export async function getCampaigns(options?: {
   sort?: string;
   order?: 'asc' | 'desc';
   useCache?: boolean;
+  _t?: string; // Timestamp for cache busting
 }): Promise<CampaignsResponse> {
   // Check if we can use cached data for active campaigns
   if (
@@ -55,11 +56,25 @@ export async function getCampaigns(options?: {
   }
   
   if (options?.sort) {
-    queryParams.append('sort', options.sort);
+    // Handle timestamp-added sort parameters by extracting the base sort field
+    // Safely handle 'created_at' with timestamp appended
+    let sortField = options.sort;
+    
+    // If the sort parameter has a timestamp appended (for cache busting)
+    if (sortField.startsWith('created_at_')) {
+      sortField = 'created_at';
+    }
+    
+    queryParams.append('sort', sortField);
   }
   
   if (options?.order) {
     queryParams.append('order', options.order);
+  }
+  
+  // Add timestamp for cache busting if provided
+  if (options?._t) {
+    queryParams.append('_t', options._t);
   }
   
   const endpoint = `/api/campaigns${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;

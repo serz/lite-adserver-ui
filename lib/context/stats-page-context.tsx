@@ -62,19 +62,26 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [dateRange, campaignIds, zoneIds, groupBy, isAuthenticated, apiInitialized]);
+  }, []);
 
   // Update the date range and trigger a refetch
   const handleDateRangeUpdate = useCallback((range: { from: Date; to: Date }) => {
     setDateRange(range);
   }, []);
 
-  // Fetch stats when filters change and auth is initialized
+  // Fetch stats when auth is initialized
   useEffect(() => {
-    if (apiInitialized) {
+    if (isAuthenticated && apiInitialized) {
       fetchStats();
     }
-  }, [fetchStats, apiInitialized, dateRange]);
+  }, [fetchStats, isAuthenticated, apiInitialized]);
+
+  // Fetch stats when filter criteria change
+  useEffect(() => {
+    if (isAuthenticated && apiInitialized) {
+      fetchStats();
+    }
+  }, [dateRange, campaignIds, zoneIds, groupBy]);
 
   return (
     <StatsPageContext.Provider

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { getCampaigns } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -14,25 +16,44 @@ export default function CampaignsPage() {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized } = useAuth();
 
-  useEffect(() => {
-    const fetchCampaigns = async () => {
-      // Only fetch data if authenticated and API is initialized
-      if (!isAuthenticated || !apiInitialized) return;
+  const fetchCampaigns = useCallback(async () => {
+    // Only fetch data if authenticated and API is initialized
+    if (!isAuthenticated || !apiInitialized) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Always fetch fresh data, no caching
+      const response = await getCampaigns({ 
+        limit: 20, 
+        useCache: false,
+        sort: 'created_at',
+        order: 'desc',
+        // Add timestamp to query to prevent browser caching
+        _t: Date.now().toString()
+      });
       
-      setIsLoading(true);
-      try {
-        const response = await getCampaigns({ limit: 20 });
-        setCampaigns(response.campaigns);
-        setError(null);
-      } catch (err) {
-        setError('Failed to load campaigns');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      setCampaigns(response.campaigns);
+      setError(null);
+    } catch (err) {
+      setError('Failed to load campaigns. Please try refreshing.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-    fetchCampaigns();
-  }, [isAuthenticated, apiInitialized]);
+  // Initial fetch when component mounts and auth is ready
+  useEffect(() => {
+    // Only run this effect when both auth conditions are met
+    if (isAuthenticated && apiInitialized) {
+      fetchCampaigns();
+    }
+  }, [fetchCampaigns, isAuthenticated, apiInitialized]);
+
+  // Handle manual refresh
+  const handleRefresh = async () => {
+    await fetchCampaigns();
+  };
 
   // Helper function to map status to variant
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
@@ -54,7 +75,18 @@ export default function CampaignsPage() {
     <DashboardLayout>
       <div className="container mx-auto p-6">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Campaigns</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold">Campaigns</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isLoading}
+              title="Refresh campaigns"
+            >
+              <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
           <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
             New Campaign
           </button>
@@ -63,6 +95,14 @@ export default function CampaignsPage() {
         {error && (
           <div className="mb-6 rounded-md bg-destructive/15 p-4 text-destructive">
             {error}
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2" 
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
           </div>
         )}
 

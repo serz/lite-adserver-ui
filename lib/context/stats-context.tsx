@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { getLast7DaysImpressions, getLast7DaysClicks } from '@/lib/services/stats';
+import { useAuth } from '@/components/auth-provider';
 
 interface StatsContextType {
   impressions: number;
@@ -18,8 +19,11 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [clicks, setClicks] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, apiInitialized } = useAuth();
 
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
+    if (!isAuthenticated || !apiInitialized) return;
+    
     setIsLoading(true);
     setError(null);
     
@@ -36,12 +40,14 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Initial fetch
-  useEffect(() => {
-    fetchStats();
   }, []);
+
+  // Initial fetch when auth is ready
+  useEffect(() => {
+    if (isAuthenticated && apiInitialized) {
+      fetchStats();
+    }
+  }, [fetchStats, isAuthenticated, apiInitialized]);
 
   return (
     <StatsContext.Provider

@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { ZonesResponse } from '@/types/api';
+import { ZonesResponse, Zone } from '@/types/api';
 
 // In-memory cache for zone data
 interface ZoneCache {
@@ -25,6 +25,7 @@ export async function getZones(options?: {
   sort?: string;
   order?: 'asc' | 'desc';
   useCache?: boolean;
+  _t?: string; // Timestamp for cache busting
 }): Promise<ZonesResponse> {
   // Check if we can use cached data for active zones
   if (
@@ -55,11 +56,25 @@ export async function getZones(options?: {
   }
   
   if (options?.sort) {
-    queryParams.append('sort', options.sort);
+    // Handle timestamp-added sort parameters by extracting the base sort field
+    // Safely handle 'created_at' with timestamp appended
+    let sortField = options.sort;
+    
+    // If the sort parameter has a timestamp appended (for cache busting)
+    if (sortField.startsWith('created_at_')) {
+      sortField = 'created_at';
+    }
+    
+    queryParams.append('sort', sortField);
   }
   
   if (options?.order) {
     queryParams.append('order', options.order);
+  }
+  
+  // Add timestamp for cache busting if provided
+  if (options?._t) {
+    queryParams.append('_t', options._t);
   }
   
   const endpoint = `/api/zones${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
@@ -105,5 +120,28 @@ export async function getActiveZonesCount(): Promise<number> {
   } catch (error) {
     // Return 0 on error
     return 0;
+  }
+}
+
+/**
+ * Create a new zone
+ */
+export async function createZone(zoneData: {
+  name: string;
+  site_url?: string;
+  traffic_back_url?: string;
+  status?: 'active' | 'paused';
+}): Promise<Zone> {
+  try {
+    const response = await api.post<{ zone: Zone }>('/api/zones', zoneData);
+    
+    // Invalidate all cache after creating a new zone
+    Object.keys(cache).forEach(key => {
+      delete cache[key as keyof ZoneCache];
+    });
+    
+    return response.zone;
+  } catch (error) {
+    throw error;
   }
 } 
