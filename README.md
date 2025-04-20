@@ -14,7 +14,7 @@ A modern, responsive dashboard UI for managing the [Lite Adserver platform](http
 
 - [x] Zone edit functionality
 - [x] Activate/deactivate zone toggle
-- [ ] Campaign creation
+- [x] Campaign creation
 - [ ] Campaign edit functionality 
 - [x] Start/pause campaign controls
 - [ ] Add total and average metrics to statistics

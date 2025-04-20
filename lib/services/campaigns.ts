@@ -129,8 +129,8 @@ export async function getActiveCampaignsCount(): Promise<number> {
 export async function createCampaign(campaignData: {
   name: string;
   redirect_url: string;
-  start_date: number;
-  end_date?: number | null;
+  start_date: number; // timestamp in milliseconds
+  end_date?: number | null; // timestamp in milliseconds
   status?: 'active' | 'paused';
   targeting_rules?: TargetingRule[];
 }): Promise<Campaign> {
@@ -156,8 +156,8 @@ export async function updateCampaign(
   campaignData: {
     name?: string;
     redirect_url?: string;
-    start_date?: number;
-    end_date?: number | null;
+    start_date?: number; // timestamp in milliseconds
+    end_date?: number | null; // timestamp in milliseconds
     status?: 'active' | 'paused' | 'completed';
     targeting_rules?: TargetingRule[];
   }

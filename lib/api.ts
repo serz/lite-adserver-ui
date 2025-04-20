@@ -45,6 +45,40 @@ export class ApiClient {
     return !!this.headers['Authorization'];
   }
 
+  /**
+   * Process data before sending to API to ensure correct formats
+   * This ensures date timestamps remain in milliseconds
+   */
+  private processRequestData(data: any): any {
+    if (!data) return data;
+    
+    // Create a copy of the data to avoid mutating the original
+    const processedData = { ...data };
+    
+    // Ensure campaign timestamps are sent in milliseconds
+    if ('start_date' in processedData || 'end_date' in processedData) {
+      // Always ensure we're using milliseconds, not seconds
+      // This is a safeguard in case any conversion to seconds happens elsewhere
+      if (processedData.start_date && typeof processedData.start_date === 'number') {
+        // If this is a seconds timestamp (smaller than year 2000 in ms), convert to ms
+        if (processedData.start_date < 100000000000) {
+          console.log('API client: Converting start_date from seconds to milliseconds');
+          processedData.start_date = processedData.start_date * 1000;
+        }
+      }
+      
+      if (processedData.end_date && typeof processedData.end_date === 'number') {
+        // If this is a seconds timestamp (smaller than year 2000 in ms), convert to ms
+        if (processedData.end_date < 100000000000) {
+          console.log('API client: Converting end_date from seconds to milliseconds');
+          processedData.end_date = processedData.end_date * 1000;
+        }
+      }
+    }
+    
+    return processedData;
+  }
+
   async request<T>(
     endpoint: string,
     method: string = 'GET',
@@ -63,7 +97,9 @@ export class ApiClient {
     };
 
     if (data) {
-      options.body = JSON.stringify(data);
+      // Process data to ensure proper timestamp formats
+      const processedData = this.processRequestData(data);
+      options.body = JSON.stringify(processedData);
     }
 
     console.log(`API client: Making ${method} request to ${endpoint}`);

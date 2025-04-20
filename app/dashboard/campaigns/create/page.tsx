@@ -215,8 +215,8 @@ function CampaignForm() {
       const campaignData = {
         name: name.trim(),
         redirect_url: redirectUrl.trim(),
-        start_date: startDate ? Math.floor(startDate.getTime() / 1000) : Math.floor(Date.now() / 1000),
-        end_date: endDate ? Math.floor(endDate.getTime() / 1000) : null,
+        start_date: startDate ? startDate.getTime() : Date.now(),
+        end_date: endDate ? endDate.getTime() : null,
         status,
         targeting_rules: targetingRules.length > 0 ? targetingRules : undefined
       };

@@ -11,11 +11,11 @@ export interface Campaign {
   id: number;
   name: string;
   redirect_url: string;
-  start_date: number;
-  end_date: number | null;
+  start_date: number; // timestamp in milliseconds
+  end_date: number | null; // timestamp in milliseconds
   status: 'active' | 'paused' | 'completed';
-  created_at: number;
-  updated_at: number;
+  created_at: number; // timestamp in milliseconds
+  updated_at: number; // timestamp in milliseconds
 }
 
 export interface CampaignsResponse {
