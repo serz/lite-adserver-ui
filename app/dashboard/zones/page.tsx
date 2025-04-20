@@ -8,9 +8,16 @@ import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { ZoneDialog } from '@/components/zone-dialog';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Pencil, Power } from 'lucide-react';
+import { RefreshCw, Pencil, Power, Code, Copy, Check } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Pagination,
   PaginationContent,
@@ -59,6 +66,8 @@ function ZonesContent() {
   const hasInitiallyFetchedRef = useRef(false);
   // Add toast for notifications
   const { toast } = useToast();
+  // Add state to track which code has been copied
+  const [copiedZoneId, setCopiedZoneId] = useState<number | null>(null);
 
   const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
     // Only set loading state if we're doing an initial fetch or a forced refetch
@@ -179,6 +188,38 @@ function ZonesContent() {
     return pages;
   };
 
+  // Get the serve URL for a zone
+  const getServeUrl = (zoneId: number) => {
+    return `${process.env.NEXT_PUBLIC_AD_SERVER_URL}/serve/${zoneId}`;
+  };
+
+  // Handle copy to clipboard
+  const handleCopyCode = (zoneId: number) => {
+    const codeText = getServeUrl(zoneId);
+    navigator.clipboard.writeText(codeText).then(() => {
+      // Show success toast
+      toast({
+        title: "Copied!",
+        description: "Embed URL copied to clipboard",
+      });
+      
+      // Set the copied state to show the check icon
+      setCopiedZoneId(zoneId);
+      
+      // Reset the copied state after 2 seconds
+      setTimeout(() => {
+        setCopiedZoneId(null);
+      }, 2000);
+    }).catch(err => {
+      // Show error toast if copying fails
+      toast({
+        title: "Error",
+        description: "Failed to copy the embed URL",
+        variant: "destructive",
+      });
+    });
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -255,6 +296,40 @@ function ZonesContent() {
                     <td className="px-4 py-3 text-sm">{zone.traffic_back_url || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">{formatDate(zone.created_at)}</td>
                     <td className="px-4 py-3 text-sm flex items-center gap-1">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button 
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Get embed code"
+                          >
+                            <Code className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Zone Embed URL</DialogTitle>
+                          </DialogHeader>
+                          <div className="mt-4 flex items-center p-2 bg-muted rounded-md overflow-auto">
+                            <code className="text-sm flex-1">{getServeUrl(zone.id)}</code>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 flex-shrink-0 ml-2"
+                              onClick={() => handleCopyCode(zone.id)}
+                              title="Copy to clipboard"
+                            >
+                              {copiedZoneId === zone.id ? (
+                                <Check className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <Copy className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      
                       <ZoneDialog
                         mode="edit"
                         zoneId={zone.id}
@@ -269,6 +344,7 @@ function ZonesContent() {
                           <Pencil className="h-4 w-4" />
                         </Button>
                       </ZoneDialog>
+                      
                       <Button
                         variant={zone.status === 'active' ? 'ghost' : 'outline'}
                         size="icon"
