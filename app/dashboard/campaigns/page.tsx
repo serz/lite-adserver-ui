@@ -7,7 +7,7 @@ import { Campaign } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Play, Pause } from 'lucide-react';
+import { RefreshCw, Play, Pause, Edit } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -216,20 +216,32 @@ function CampaignsContent() {
                   <td className="px-4 py-3 text-sm">{formatDate(campaign.end_date, { fallback: 'N/A' })}</td>
                   <td className="px-4 py-3 text-sm">{formatDate(campaign.created_at)}</td>
                   <td className="px-4 py-3 text-sm">
-                    <Button
-                      variant={campaign.status === 'active' ? 'ghost' : 'outline'}
-                      size="icon"
-                      className="h-8 w-8"
-                      title={campaign.status === 'active' ? 'Pause campaign' : 'Start campaign'}
-                      onClick={() => handleToggleStatus(campaign)}
-                      disabled={campaign.status === 'completed'}
-                    >
-                      {campaign.status === 'active' ? (
-                        <Pause className="h-4 w-4 text-amber-500" />
-                      ) : (
-                        <Play className="h-4 w-4 text-green-500" />
-                      )}
-                    </Button>
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant={campaign.status === 'active' ? 'ghost' : 'outline'}
+                        size="icon"
+                        className="h-8 w-8"
+                        title={campaign.status === 'active' ? 'Pause campaign' : 'Start campaign'}
+                        onClick={() => handleToggleStatus(campaign)}
+                        disabled={campaign.status === 'completed'}
+                      >
+                        {campaign.status === 'active' ? (
+                          <Pause className="h-4 w-4 text-amber-500" />
+                        ) : (
+                          <Play className="h-4 w-4 text-green-500" />
+                        )}
+                      </Button>
+                      <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Edit campaign"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

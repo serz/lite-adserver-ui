@@ -102,11 +102,12 @@ export class ApiClient {
       options.body = JSON.stringify(processedData);
     }
 
-    console.log(`API client: Making ${method} request to ${endpoint}`);
+    console.log(`API client: Making ${method} request to ${endpoint}`, { url, headers: { ...this.headers, Authorization: '[REDACTED]' } });
     
     try {
       const response = await fetch(url, options);
       const contentType = response.headers.get('content-type');
+      console.log(`API client: Response received for ${endpoint}. Status: ${response.status}, Content-Type: ${contentType}`);
       
       if (!response.ok) {
         if (contentType?.includes('application/json')) {
@@ -121,12 +122,12 @@ export class ApiClient {
 
       if (contentType?.includes('application/json')) {
         const data = await response.json();
-        console.log(`API client: Received JSON response from ${endpoint}`);
+        console.log(`API client: Received JSON response from ${endpoint}`, { responseShape: Object.keys(data) });
         return data;
       }
 
       const textData = await response.text();
-      console.log(`API client: Received text response from ${endpoint}`);
+      console.log(`API client: Received text response from ${endpoint}`, { responseLength: textData.length });
       return textData as unknown as T;
     } catch (error) {
       console.error(`API client: Error during request to ${endpoint}:`, error);

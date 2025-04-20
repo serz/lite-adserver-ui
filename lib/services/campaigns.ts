@@ -7,6 +7,13 @@ interface CampaignCache {
     data: CampaignsResponse;
     timestamp: number;
     expiresIn: number; // milliseconds
+  },
+  campaignById?: {
+    [id: number]: {
+      data: Campaign;
+      timestamp: number;
+      expiresIn: number;
+    }
   }
 }
 
@@ -172,6 +179,47 @@ export async function updateCampaign(
     
     return response.campaign;
   } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Get a single campaign by ID
+ */
+export async function getCampaign(id: number, options?: {
+  useCache?: boolean;
+}): Promise<Campaign> {
+  console.log(`getCampaign called for ID: ${id} with options:`, options);
+  
+  // Check if we can use cached data
+  if (
+    options?.useCache !== false &&
+    cache.campaignById?.[id] &&
+    Date.now() - cache.campaignById[id].timestamp < cache.campaignById[id].expiresIn
+  ) {
+    console.log(`Using cached campaign data for ID: ${id}`);
+    return cache.campaignById[id].data;
+  }
+
+  try {
+    console.log(`Making API request to fetch campaign with ID: ${id}`);
+    const response = await api.get<Campaign>(`/api/campaigns/${id}`);
+    console.log(`Campaign API response received for ID: ${id}`, response);
+    
+    // Cache the response
+    if (!cache.campaignById) {
+      cache.campaignById = {};
+    }
+    
+    cache.campaignById[id] = {
+      data: response,
+      timestamp: Date.now(),
+      expiresIn: CACHE_DURATION
+    };
+    
+    return response;
+  } catch (error) {
+    console.error(`Error fetching campaign with ID: ${id}:`, error);
     throw error;
   }
 } 

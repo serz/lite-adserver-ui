@@ -16,6 +16,7 @@ export interface Campaign {
   status: 'active' | 'paused' | 'completed';
   created_at: number; // timestamp in milliseconds
   updated_at: number; // timestamp in milliseconds
+  targeting_rules?: TargetingRule[]; // Optional targeting rules
 }
 
 export interface CampaignsResponse {
