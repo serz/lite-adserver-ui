@@ -146,4 +146,32 @@ export async function createCampaign(campaignData: {
   } catch (error) {
     throw error;
   }
+}
+
+/**
+ * Update an existing campaign
+ */
+export async function updateCampaign(
+  id: number,
+  campaignData: {
+    name?: string;
+    redirect_url?: string;
+    start_date?: number;
+    end_date?: number | null;
+    status?: 'active' | 'paused' | 'completed';
+    targeting_rules?: TargetingRule[];
+  }
+): Promise<Campaign> {
+  try {
+    const response = await api.put<{ campaign: Campaign }>(`/api/campaigns/${id}`, campaignData);
+    
+    // Invalidate all cache after updating a campaign
+    Object.keys(cache).forEach(key => {
+      delete cache[key as keyof CampaignCache];
+    });
+    
+    return response.campaign;
+  } catch (error) {
+    throw error;
+  }
 } 

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, FormEvent } from "react";
-import { createZone } from "@/lib/services/zones";
+import { useState, FormEvent, useEffect } from "react";
+import { createZone, updateZone, getZone } from "@/lib/services/zones";
 import { useZones } from "@/lib/context/zone-context";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,17 +17,24 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Zone } from "@/types/api";
 
 interface ZoneDialogProps {
   children?: React.ReactNode;
   triggerClassName?: string;
   onZoneCreated?: () => void;
+  onZoneUpdated?: () => void;
+  mode?: 'create' | 'edit';
+  zoneId?: number;
 }
 
 export function ZoneDialog({ 
   children,
   triggerClassName,
-  onZoneCreated
+  onZoneCreated,
+  onZoneUpdated,
+  mode = 'create',
+  zoneId
 }: ZoneDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,11 +46,47 @@ export function ZoneDialog({
   const [name, setName] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
   const [trafficBackUrl, setTrafficBackUrl] = useState("");
+  const [status, setStatus] = useState<'active' | 'paused'>('active');
   
   // Field errors
   const [nameError, setNameError] = useState<string | null>(null);
   const [siteUrlError, setSiteUrlError] = useState<string | null>(null);
   const [trafficBackUrlError, setTrafficBackUrlError] = useState<string | null>(null);
+  
+  // Fetch zone data when editing
+  useEffect(() => {
+    const fetchZoneData = async () => {
+      if (mode === 'edit' && zoneId && isOpen) {
+        setIsLoading(true);
+        setFormError(null); // Clear any previous errors
+        
+        try {
+          console.log(`Fetching zone data for zone ID: ${zoneId}`);
+          const zone = await getZone(zoneId);
+          console.log('Fetched zone data:', zone);
+          
+          // Verify we have valid zone data
+          if (!zone || typeof zone !== 'object') {
+            console.error('Invalid zone data received:', zone);
+            throw new Error('Invalid zone data received from server');
+          }
+          
+          // Update form fields with zone data
+          setName(zone.name || '');
+          setSiteUrl(zone.site_url || '');
+          setTrafficBackUrl(zone.traffic_back_url || '');
+          setStatus(zone.status || 'active');
+        } catch (error) {
+          console.error('Error fetching zone data:', error);
+          setFormError("Failed to load zone data. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchZoneData();
+  }, [isOpen, mode, zoneId]);
 
   // Form validation
   const validateForm = () => {
@@ -94,6 +137,7 @@ export function ZoneDialog({
     setName("");
     setSiteUrl("");
     setTrafficBackUrl("");
+    setStatus('active');
     setNameError(null);
     setSiteUrlError(null);
     setTrafficBackUrlError(null);
@@ -121,35 +165,63 @@ export function ZoneDialog({
         name: zoneName,
         site_url: siteUrl.trim() || undefined,
         traffic_back_url: trafficBackUrl.trim() || undefined,
+        status,
       };
       
-      // Create zone
-      const response = await createZone(zoneData);
+      let response: Zone;
+      
+      if (mode === 'create') {
+        // Create zone
+        response = await createZone(zoneData);
+        
+        // Show success toast
+        toast({
+          title: "Zone created",
+          description: `${zoneName} has been successfully created.`,
+        });
+        
+        // Call onZoneCreated callback if provided
+        if (onZoneCreated) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await onZoneCreated();
+        }
+      } else {
+        // Edit zone
+        if (!zoneId) {
+          throw new Error("Zone ID is required for editing");
+        }
+        
+        response = await updateZone(zoneId, zoneData);
+        
+        // Show success toast
+        toast({
+          title: "Zone updated",
+          description: `${zoneName} has been successfully updated.`,
+        });
+        
+        // Call onZoneUpdated callback if provided
+        if (onZoneUpdated) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          await onZoneUpdated();
+        }
+      }
       
       // Reset form and close dialog
       resetForm();
       setIsOpen(false);
       
-      // Show success toast
-      toast({
-        title: "Zone created",
-        description: `${zoneName} has been successfully created.`,
-      });
-      
       try {
         // Refetch zones to update the list - with a slight delay to ensure API consistency
         await new Promise(resolve => setTimeout(resolve, 500));
         await refetchZones();
-        
-        // Call onZoneCreated callback if provided
-        if (onZoneCreated) {
-          await onZoneCreated();
-        }
       } catch (refreshError) {
         // Still consider the operation successful even if refresh fails
       }
     } catch (error) {
-      setFormError("Failed to create zone. Please try again.");
+      setFormError(mode === 'create' 
+        ? "Failed to create zone. Please try again." 
+        : "Failed to update zone. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -163,15 +235,18 @@ export function ZoneDialog({
       <DialogTrigger asChild>
         {children || (
           <Button className={triggerClassName}>
-            New Zone
+            {mode === 'create' ? 'New Zone' : 'Edit Zone'}
           </Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Zone</DialogTitle>
+          <DialogTitle>{mode === 'create' ? 'Create New Zone' : 'Edit Zone'}</DialogTitle>
           <DialogDescription>
-            Enter the details for your new zone. Click save when you&apos;re done.
+            {mode === 'create' 
+              ? "Enter the details for your new zone. Click save when you're done."
+              : "Update the details for this zone. Click save when you're done."
+            }
           </DialogDescription>
         </DialogHeader>
         
@@ -246,7 +321,10 @@ export function ZoneDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Creating..." : "Create Zone"}
+              {isLoading 
+                ? (mode === 'create' ? "Creating..." : "Updating...") 
+                : (mode === 'create' ? "Create Zone" : "Update Zone")
+              }
             </Button>
           </DialogFooter>
         </form>

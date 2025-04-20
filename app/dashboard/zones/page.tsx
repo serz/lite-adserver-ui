@@ -2,14 +2,15 @@
 
 import { useCallback, useState, useEffect, useRef } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
-import { getZones } from '@/lib/services/zones';
+import { getZones, updateZone } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { ZoneDialog } from '@/components/zone-dialog';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Pencil, Power } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
+import { useToast } from '@/hooks/use-toast';
 import {
   Pagination,
   PaginationContent,
@@ -56,6 +57,8 @@ function ZonesContent() {
   const itemsPerPage = 10;
   // Add a ref to track if we've already fetched data
   const hasInitiallyFetchedRef = useRef(false);
+  // Add toast for notifications
+  const { toast } = useToast();
 
   const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
     // Only set loading state if we're doing an initial fetch or a forced refetch
@@ -114,6 +117,34 @@ function ZonesContent() {
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  // Handle zone status toggle
+  const handleToggleStatus = async (zone: Zone) => {
+    try {
+      const newStatus = zone.status === 'active' ? 'inactive' : 'active';
+      await updateZone(zone.id, { status: newStatus });
+      
+      // Update local state
+      setZones(prevZones => 
+        prevZones.map(z => 
+          z.id === zone.id ? { ...z, status: newStatus } : z
+        )
+      );
+      
+      // Show success toast
+      toast({
+        title: "Success",
+        description: `Zone "${zone.name}" has been ${newStatus === 'active' ? 'activated' : 'deactivated'}.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update zone status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Generate an array of page numbers to display
@@ -204,6 +235,7 @@ function ZonesContent() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Site URL</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Traffic Back URL</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Created</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,6 +254,31 @@ function ZonesContent() {
                     <td className="px-4 py-3 text-sm">{zone.site_url || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">{zone.traffic_back_url || 'N/A'}</td>
                     <td className="px-4 py-3 text-sm">{formatDate(zone.created_at)}</td>
+                    <td className="px-4 py-3 text-sm flex items-center gap-1">
+                      <ZoneDialog
+                        mode="edit"
+                        zoneId={zone.id}
+                        onZoneUpdated={() => fetchZones(true)}
+                      >
+                        <Button 
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          title="Edit zone"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </ZoneDialog>
+                      <Button
+                        variant={zone.status === 'active' ? 'ghost' : 'outline'}
+                        size="icon"
+                        className="h-8 w-8"
+                        title={zone.status === 'active' ? 'Deactivate zone' : 'Activate zone'}
+                        onClick={() => handleToggleStatus(zone)}
+                      >
+                        <Power className={`h-4 w-4 ${zone.status === 'active' ? 'text-green-500' : 'text-amber-500'}`} />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

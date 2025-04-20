@@ -2,14 +2,15 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
-import { getCampaigns } from '@/lib/services/campaigns';
+import { getCampaigns, updateCampaign } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Play, Pause } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CampaignsPage() {
   return (
@@ -42,6 +43,8 @@ function CampaignsContent() {
   const [error, setError] = useState<string | null>(null);
   // Add a ref to track if we've already fetched data
   const hasInitiallyFetchedRef = useRef(false);
+  // Add toast for notifications
+  const { toast } = useToast();
 
   const fetchCampaigns = useCallback(async (forceFetch = false) => {
     // Only set loading state if we're doing an initial fetch or a forced refetch
@@ -81,6 +84,44 @@ function CampaignsContent() {
   // Handle manual refresh with forced refetch
   const handleRefresh = async () => {
     await fetchCampaigns(true);
+  };
+
+  // Handle campaign status toggle
+  const handleToggleStatus = async (campaign: Campaign) => {
+    try {
+      // Only toggle between active and paused (not completed)
+      if (campaign.status === 'completed') {
+        toast({
+          title: "Cannot change status",
+          description: "Completed campaigns cannot be reactivated.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const newStatus = campaign.status === 'active' ? 'paused' : 'active';
+      await updateCampaign(campaign.id, { status: newStatus });
+      
+      // Update local state
+      setCampaigns(prevCampaigns => 
+        prevCampaigns.map(c => 
+          c.id === campaign.id ? { ...c, status: newStatus } : c
+        )
+      );
+      
+      // Show success toast
+      toast({
+        title: "Success",
+        description: `Campaign "${campaign.name}" has been ${newStatus === 'active' ? 'started' : 'paused'}.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update campaign status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Helper function to map status to variant
@@ -155,6 +196,7 @@ function CampaignsContent() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Start Date</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">End Date</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Created</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -173,6 +215,22 @@ function CampaignsContent() {
                   <td className="px-4 py-3 text-sm">{formatDate(campaign.start_date)}</td>
                   <td className="px-4 py-3 text-sm">{formatDate(campaign.end_date, { fallback: 'N/A' })}</td>
                   <td className="px-4 py-3 text-sm">{formatDate(campaign.created_at)}</td>
+                  <td className="px-4 py-3 text-sm">
+                    <Button
+                      variant={campaign.status === 'active' ? 'ghost' : 'outline'}
+                      size="icon"
+                      className="h-8 w-8"
+                      title={campaign.status === 'active' ? 'Pause campaign' : 'Start campaign'}
+                      onClick={() => handleToggleStatus(campaign)}
+                      disabled={campaign.status === 'completed'}
+                    >
+                      {campaign.status === 'active' ? (
+                        <Pause className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <Play className="h-4 w-4 text-green-500" />
+                      )}
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>

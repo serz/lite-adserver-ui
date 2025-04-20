@@ -35,7 +35,7 @@ export interface Zone {
   name: string;
   site_url: string;
   traffic_back_url: string;
-  status: 'active' | 'paused';
+  status: 'active' | 'inactive';
   created_at: number;
   updated_at: number;
 }
