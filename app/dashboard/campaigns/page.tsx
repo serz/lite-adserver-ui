@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
+import Link from 'next/link';
 
 export default function CampaignsPage() {
   return (
@@ -113,9 +114,11 @@ function CampaignsContent() {
             <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
-          New Campaign
-        </button>
+        <Link href="/dashboard/campaigns/create">
+          <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
+            New Campaign
+          </Button>
+        </Link>
       </div>
 
       {error && (

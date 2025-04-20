@@ -27,7 +27,6 @@ export interface TargetingRule {
   targeting_rule_type_id: number;
   targeting_method: 'whitelist' | 'blacklist';
   rule: string;
-  weight: number;
 }
 
 // Zone types

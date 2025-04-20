@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { CampaignsResponse } from '@/types/api';
+import { CampaignsResponse, Campaign, TargetingRule } from '@/types/api';
 
 // In-memory cache for campaign data
 interface CampaignCache {
@@ -120,5 +120,30 @@ export async function getActiveCampaignsCount(): Promise<number> {
   } catch (error) {
     // Return 0 on error
     return 0;
+  }
+}
+
+/**
+ * Create a new campaign
+ */
+export async function createCampaign(campaignData: {
+  name: string;
+  redirect_url: string;
+  start_date: number;
+  end_date?: number | null;
+  status?: 'active' | 'paused';
+  targeting_rules?: TargetingRule[];
+}): Promise<Campaign> {
+  try {
+    const response = await api.post<{ campaign: Campaign }>('/api/campaigns', campaignData);
+    
+    // Invalidate all cache after creating a new campaign
+    Object.keys(cache).forEach(key => {
+      delete cache[key as keyof CampaignCache];
+    });
+    
+    return response.campaign;
+  } catch (error) {
+    throw error;
   }
 } 
