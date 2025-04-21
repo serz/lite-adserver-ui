@@ -15,8 +15,9 @@ A modern, responsive dashboard UI for managing the [Lite Adserver platform](http
 - [x] Zone edit functionality
 - [x] Activate/deactivate zone toggle
 - [x] Campaign creation
-- [ ] Campaign edit functionality 
+- [x] Campaign edit functionality 
 - [x] Start/pause campaign controls
+- [ ] Fix targeting rules editing (adserver api dependency)
 - [ ] Add total and average metrics to statistics
 - [ ] View raw ad_events data
 
@@ -51,7 +52,7 @@ cp .env.example .env.local
 Edit the `.env.local` file with your specific configuration:
 ```
 NEXT_PUBLIC_AD_SERVER_URL=https://your-api-url.com
-NEXT_PUBLIC_AD_SERVER_KEY=your-api-key-here
+NEXT_PUBLIC_TIMEZONE=your-region/country-timezone
 ```
 
 4. Start the development server

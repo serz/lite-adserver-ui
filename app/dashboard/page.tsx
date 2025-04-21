@@ -6,6 +6,7 @@ import { useZones } from '@/lib/context/zone-context';
 import { useStats } from '@/lib/context/stats-context';
 import { RecentActivity } from '@/components/recent-activity';
 import { WithAuthGuard } from '@/components/with-auth-guard';
+import { DemoInstanceWarning } from '@/components/demo-instance-warning';
 
 export default function DashboardPage() {
   return (
@@ -39,6 +40,11 @@ function DashboardContent() {
   return (
     <div className="container mx-auto p-6">
       <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+      
+      {/* Demo Instance Warning Widget */}
+      <div className="mb-6">
+        <DemoInstanceWarning />
+      </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Campaign Stats Card */}
