@@ -154,6 +154,7 @@ export async function updateZone(
     name?: string;
     site_url?: string;
     traffic_back_url?: string;
+    status?: 'active' | 'inactive';
   }
 ): Promise<Zone> {
   try {
