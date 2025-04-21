@@ -47,7 +47,6 @@ export function ZoneDialog({
   const [name, setName] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
   const [trafficBackUrl, setTrafficBackUrl] = useState("");
-  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   
   // Field errors
   const [nameError, setNameError] = useState<string | null>(null);
@@ -76,7 +75,6 @@ export function ZoneDialog({
           setName(zone.name || '');
           setSiteUrl(zone.site_url || '');
           setTrafficBackUrl(zone.traffic_back_url || '');
-          setStatus(zone.status || 'active');
         } catch (error) {
           console.error('Error fetching zone data:', error);
           setFormError("Failed to load zone data. Please try again.");
@@ -138,7 +136,6 @@ export function ZoneDialog({
     setName("");
     setSiteUrl("");
     setTrafficBackUrl("");
-    setStatus('active');
     setNameError(null);
     setSiteUrlError(null);
     setTrafficBackUrlError(null);
@@ -166,7 +163,6 @@ export function ZoneDialog({
         name: zoneName,
         site_url: siteUrl.trim() || undefined,
         traffic_back_url: trafficBackUrl.trim() || undefined,
-        status,
       };
       
       let response: Zone;
@@ -306,26 +302,6 @@ export function ZoneDialog({
             )}
             <p className="text-xs text-muted-foreground">
               Fallback URL for traffic when no ads are available
-            </p>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="status">Status</Label>
-            <Select
-              value={status}
-              onValueChange={(value) => setStatus(value as 'active' | 'inactive')}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Sets whether this zone is active or inactive
             </p>
           </div>
           

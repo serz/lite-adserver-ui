@@ -130,7 +130,6 @@ export async function createZone(zoneData: {
   name: string;
   site_url?: string;
   traffic_back_url?: string;
-  status?: 'active' | 'inactive';
 }): Promise<Zone> {
   try {
     const response = await api.post<{ zone: Zone }>('/api/zones', zoneData);
@@ -155,7 +154,6 @@ export async function updateZone(
     name?: string;
     site_url?: string;
     traffic_back_url?: string;
-    status?: 'active' | 'inactive';
   }
 ): Promise<Zone> {
   try {
