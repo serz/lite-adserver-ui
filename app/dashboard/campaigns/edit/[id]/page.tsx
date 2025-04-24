@@ -14,7 +14,7 @@ import { Campaign, TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -27,6 +27,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { api } from "@/lib/api"; // Direct API access
 import { CountrySelector } from "@/components/country-selector";
+import { ZoneSelector } from "@/components/zone-selector";
 
 interface EditCampaignPageProps {
   params: {
@@ -88,6 +89,12 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   const [countryTargetingMethod, setCountryTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
   const [geoRuleId, setGeoRuleId] = useState<number | null>(null);
   
+  // Zone targeting state
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([]);
+  const [zoneTargetingMethod, setZoneTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [zoneRuleId, setZoneRuleId] = useState<number | null>(null);
+  
   // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
@@ -112,6 +119,14 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
         const response = await api.get<Campaign>(`/api/campaigns/${campaignId}`);
         console.log("Campaign data received:", response);
         
+        // Load zones
+        const zonesResponse = await getZones({ 
+          status: "active",
+          limit: 100,
+          useCache: true
+        });
+        setZones(zonesResponse.zones);
+        
         // Get targeting rule types data
         const rulesResponse = await api.get<{ targeting_rule_types: Array<{id: number, name: string}> }>('/api/targeting-rule-types');
         
@@ -131,6 +146,15 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
         
         if (geoRule) {
           setGeoRuleId(geoRule.id);
+        }
+        
+        // Find zone rule ID
+        const zoneRule = rulesResponse.targeting_rule_types.find(rule => 
+          rule.name.toLowerCase() === 'zone_id'
+        );
+        
+        if (zoneRule) {
+          setZoneRuleId(zoneRule.id);
         }
         
         // Set campaign data
@@ -167,6 +191,18 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (geoTargetRule) {
               setSelectedCountries(geoTargetRule.rule.split(','));
               setCountryTargetingMethod(geoTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected zones if zone rule exists
+          if (zoneRule) {
+            const zoneTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === zoneRule.id
+            );
+            
+            if (zoneTargetRule) {
+              setSelectedZoneIds(zoneTargetRule.rule.split(','));
+              setZoneTargetingMethod(zoneTargetRule.targeting_method);
             }
           }
         }
@@ -225,6 +261,28 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
     ]);
   }, [selectedCountries, countryTargetingMethod, geoRuleId]);
   
+  // Apply zone targeting rules
+  useEffect(() => {
+    if (!zoneRuleId || selectedZoneIds.length === 0) {
+      // Remove any existing zone targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== zoneRuleId));
+      return;
+    }
+    
+    // Create the zone targeting rule
+    const zoneRule = {
+      targeting_rule_type_id: zoneRuleId,
+      targeting_method: zoneTargetingMethod,
+      rule: selectedZoneIds.join(',')
+    };
+    
+    // Update targeting rules, replacing any existing zone rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== zoneRuleId),
+      zoneRule
+    ]);
+  }, [selectedZoneIds, zoneTargetingMethod, zoneRuleId]);
+  
   // Handle retry
   const handleRetry = () => {
     setIsLoading(true);
@@ -265,6 +323,18 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (geoTargetRule) {
               setSelectedCountries(geoTargetRule.rule.split(','));
               setCountryTargetingMethod(geoTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected zones if zone rule exists
+          if (zoneRuleId) {
+            const zoneTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === zoneRuleId
+            );
+            
+            if (zoneTargetRule) {
+              setSelectedZoneIds(zoneTargetRule.rule.split(','));
+              setZoneTargetingMethod(zoneTargetRule.targeting_method);
             }
           }
         }
@@ -559,6 +629,27 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                     />
                     <p className="text-xs text-muted-foreground">
                       Target users by their country. If no countries selected, all countries will be targeted.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Zone Targeting */}
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label className="flex items-center">
+                      <LayoutIcon className="h-4 w-4 mr-2" />
+                      Zone Targeting
+                    </Label>
+                    <ZoneSelector
+                      zones={zones}
+                      selectedZoneIds={selectedZoneIds}
+                      onChange={setSelectedZoneIds}
+                      targetingMethod={zoneTargetingMethod}
+                      onTargetingMethodChange={setZoneTargetingMethod}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Target specific ad placement zones. If no zones selected, all zones will be targeted.
                     </p>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { CampaignsResponse, Campaign, TargetingRule } from '@/types/api';
+import { syncCampaign } from './sync';
 
 // In-memory cache for campaign data
 interface CampaignCache {
@@ -176,6 +177,16 @@ export async function updateCampaign(
     Object.keys(cache).forEach(key => {
       delete cache[key as keyof CampaignCache];
     });
+    
+    // If status is being changed, trigger sync to KV storage
+    if (campaignData.status !== undefined) {
+      try {
+        await syncCampaign(id);
+      } catch (syncError) {
+        console.error(`Failed to sync campaign ${id} after status update:`, syncError);
+        // Don't rethrow, as the campaign update was successful
+      }
+    }
     
     return response.campaign;
   } catch (error) {

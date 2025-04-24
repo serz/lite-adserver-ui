@@ -1,5 +1,6 @@
 import { api } from '@/lib/api';
 import { ZonesResponse, Zone } from '@/types/api';
+import { syncZone } from './sync';
 
 // In-memory cache for zone data
 interface ZoneCache {
@@ -139,6 +140,14 @@ export async function createZone(zoneData: {
       delete cache[key as keyof ZoneCache];
     });
     
+    // Sync newly created zone to KV storage
+    try {
+      await syncZone(response.zone.id);
+    } catch (syncError) {
+      console.error(`Failed to sync new zone ${response.zone.id}:`, syncError);
+      // Don't rethrow, as the zone creation was successful
+    }
+    
     return response.zone;
   } catch (error) {
     throw error;
@@ -164,6 +173,16 @@ export async function updateZone(
     Object.keys(cache).forEach(key => {
       delete cache[key as keyof ZoneCache];
     });
+    
+    // If status is being changed, trigger sync to KV storage
+    if (zoneData.status !== undefined) {
+      try {
+        await syncZone(id);
+      } catch (syncError) {
+        console.error(`Failed to sync zone ${id} after status update:`, syncError);
+        // Don't rethrow, as the zone update was successful
+      }
+    }
     
     return response.zone;
   } catch (error) {
