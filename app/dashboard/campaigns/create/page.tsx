@@ -14,7 +14,7 @@ import { TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
+import { CountrySelector } from "@/components/country-selector";
 
 export default function CreateCampaignPage() {
   return (
@@ -63,11 +64,16 @@ function CampaignForm() {
   // Device targeting state
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   
+  // Country targeting state
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [countryTargetingMethod, setCountryTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  
   // Data for dropdowns
   const [zones, setZones] = useState<Zone[]>([]);
   const [targetingRuleTypes, setTargetingRuleTypes] = useState<{id: number, name: string}[]>([]);
   const [deviceTypeRuleId, setDeviceTypeRuleId] = useState<number | null>(null);
-
+  const [geoRuleId, setGeoRuleId] = useState<number | null>(null);
+  
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -97,10 +103,18 @@ function CampaignForm() {
         
         // Find device type rule ID
         const deviceTypeRule = ruleTypesResponse.targeting_rule_types.find(
-          rule => rule.name.toLowerCase().includes('device')
+          rule => rule.name.toLowerCase() === 'device_type'
         );
         if (deviceTypeRule) {
           setDeviceTypeRuleId(deviceTypeRule.id);
+        }
+        
+        // Find geo rule ID
+        const geoRule = ruleTypesResponse.targeting_rule_types.find(
+          rule => rule.name.toLowerCase() === 'geo'
+        );
+        if (geoRule) {
+          setGeoRuleId(geoRule.id);
         }
       } catch (error) {
         console.error("Failed to load data:", error);
@@ -119,9 +133,9 @@ function CampaignForm() {
     }
     
     // Create the device targeting rule
-    const deviceRule: TargetingRule = {
+    const deviceRule = {
       targeting_rule_type_id: deviceTypeRuleId,
-      targeting_method: "whitelist", // Always use whitelist
+      targeting_method: "whitelist" as const, // Always use whitelist for devices
       rule: selectedDevices.join(',')
     };
     
@@ -131,6 +145,28 @@ function CampaignForm() {
       deviceRule
     ]);
   }, [selectedDevices, deviceTypeRuleId]);
+  
+  // Apply country targeting rules
+  useEffect(() => {
+    if (!geoRuleId || selectedCountries.length === 0) {
+      // Remove any existing country targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== geoRuleId));
+      return;
+    }
+    
+    // Create the country targeting rule
+    const countryRule = {
+      targeting_rule_type_id: geoRuleId,
+      targeting_method: countryTargetingMethod,
+      rule: selectedCountries.join(',')
+    };
+    
+    // Update targeting rules, replacing any existing country rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== geoRuleId),
+      countryRule
+    ]);
+  }, [selectedCountries, countryTargetingMethod, geoRuleId]);
   
   // Form validation
   const validateForm = () => {
@@ -375,6 +411,26 @@ function CampaignForm() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Select which device types to target. If none selected, all device types will be targeted.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Country Targeting */}
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label className="flex items-center">
+                    <GlobeIcon className="h-4 w-4 mr-2" />
+                    Country Targeting
+                  </Label>
+                  <CountrySelector
+                    selectedCountries={selectedCountries}
+                    onChange={setSelectedCountries}
+                    targetingMethod={countryTargetingMethod}
+                    onTargetingMethodChange={setCountryTargetingMethod}
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Target users by their country. If no countries selected, all countries will be targeted.
                   </p>
                 </div>
               </div>

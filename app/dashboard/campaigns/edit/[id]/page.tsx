@@ -14,7 +14,7 @@ import { Campaign, TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -26,6 +26,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { api } from "@/lib/api"; // Direct API access
+import { CountrySelector } from "@/components/country-selector";
 
 interface EditCampaignPageProps {
   params: {
@@ -72,12 +73,21 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   const [redirectUrl, setRedirectUrl] = useState("");
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [targetingRules, setTargetingRules] = useState<TargetingRule[]>([]);
+  const [targetingRules, setTargetingRules] = useState<Array<{
+    targeting_rule_type_id: number;
+    targeting_method: "whitelist" | "blacklist";
+    rule: string;
+  }>>([]);
   
   // Device targeting state
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [deviceTypeRuleId, setDeviceTypeRuleId] = useState<number | null>(null);
-
+  
+  // Country targeting state
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [countryTargetingMethod, setCountryTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [geoRuleId, setGeoRuleId] = useState<number | null>(null);
+  
   // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
@@ -102,14 +112,25 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
         const response = await api.get<Campaign>(`/api/campaigns/${campaignId}`);
         console.log("Campaign data received:", response);
         
-        // Get device type rule ID
+        // Get targeting rule types data
         const rulesResponse = await api.get<{ targeting_rule_types: Array<{id: number, name: string}> }>('/api/targeting-rule-types');
+        
+        // Find device type rule ID
         const deviceRule = rulesResponse.targeting_rule_types.find(rule => 
-          rule.name.toLowerCase().includes('device')
+          rule.name.toLowerCase() === 'device_type'
         );
         
         if (deviceRule) {
           setDeviceTypeRuleId(deviceRule.id);
+        }
+        
+        // Find geo rule ID
+        const geoRule = rulesResponse.targeting_rule_types.find(rule => 
+          rule.name.toLowerCase() === 'geo'
+        );
+        
+        if (geoRule) {
+          setGeoRuleId(geoRule.id);
         }
         
         // Set campaign data
@@ -136,6 +157,18 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
               setSelectedDevices(deviceTargetRule.rule.split(','));
             }
           }
+          
+          // Set selected countries if geo rule exists
+          if (geoRule) {
+            const geoTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === geoRule.id
+            );
+            
+            if (geoTargetRule) {
+              setSelectedCountries(geoTargetRule.rule.split(','));
+              setCountryTargetingMethod(geoTargetRule.targeting_method);
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading campaign:", error);
@@ -148,31 +181,49 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
     loadCampaignData();
   }, [campaignId]);
   
-  // Update targeting rules when selected devices change
+  // Apply device targeting rules
   useEffect(() => {
-    if (!deviceTypeRuleId) return;
-    
-    if (selectedDevices.length === 0) {
-      // Remove device targeting rule if no devices selected
-      setTargetingRules(prevRules => 
-        prevRules.filter(rule => rule.targeting_rule_type_id !== deviceTypeRuleId)
-      );
+    if (!deviceTypeRuleId || selectedDevices.length === 0) {
+      // Remove any existing device targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== deviceTypeRuleId));
       return;
     }
     
-    // Create device targeting rule
-    const deviceRule: TargetingRule = {
+    // Create the device targeting rule
+    const deviceRule = {
       targeting_rule_type_id: deviceTypeRuleId,
-      targeting_method: "whitelist",
+      targeting_method: "whitelist" as const, // Always use whitelist for devices
       rule: selectedDevices.join(',')
     };
     
-    // Update targeting rules
-    setTargetingRules(prevRules => [
-      ...prevRules.filter(rule => rule.targeting_rule_type_id !== deviceTypeRuleId),
+    // Update targeting rules, replacing any existing device rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== deviceTypeRuleId),
       deviceRule
     ]);
   }, [selectedDevices, deviceTypeRuleId]);
+  
+  // Apply country targeting rules
+  useEffect(() => {
+    if (!geoRuleId || selectedCountries.length === 0) {
+      // Remove any existing country targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== geoRuleId));
+      return;
+    }
+    
+    // Create the country targeting rule
+    const countryRule = {
+      targeting_rule_type_id: geoRuleId,
+      targeting_method: countryTargetingMethod,
+      rule: selectedCountries.join(',')
+    };
+    
+    // Update targeting rules, replacing any existing country rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== geoRuleId),
+      countryRule
+    ]);
+  }, [selectedCountries, countryTargetingMethod, geoRuleId]);
   
   // Handle retry
   const handleRetry = () => {
@@ -202,6 +253,18 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             
             if (deviceTargetRule) {
               setSelectedDevices(deviceTargetRule.rule.split(','));
+            }
+          }
+          
+          // Set selected countries if geo rule exists
+          if (geoRuleId) {
+            const geoTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === geoRuleId
+            );
+            
+            if (geoTargetRule) {
+              setSelectedCountries(geoTargetRule.rule.split(','));
+              setCountryTargetingMethod(geoTargetRule.targeting_method);
             }
           }
         }
@@ -476,6 +539,26 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Select which device types to target. If none selected, all device types will be targeted.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Country Targeting */}
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label className="flex items-center">
+                      <GlobeIcon className="h-4 w-4 mr-2" />
+                      Country Targeting
+                    </Label>
+                    <CountrySelector
+                      selectedCountries={selectedCountries}
+                      onChange={setSelectedCountries}
+                      targetingMethod={countryTargetingMethod}
+                      onTargetingMethodChange={setCountryTargetingMethod}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Target users by their country. If no countries selected, all countries will be targeted.
                     </p>
                   </div>
                 </div>
