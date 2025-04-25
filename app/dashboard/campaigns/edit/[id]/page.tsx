@@ -394,40 +394,64 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   // Handle form submission
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     setFormError(null);
-    
+
     try {
-      // Prepare campaign data
+      // Prepare campaign data (WITHOUT targeting rules)
       const campaignData = {
         name: name.trim(),
         redirect_url: redirectUrl.trim(),
         start_date: startDate ? startDate.getTime() : Date.now(),
         end_date: endDate ? endDate.getTime() : null,
-        targeting_rules: targetingRules.length > 0 ? targetingRules : undefined
+        // Targeting rules are removed from here and sent separately
       };
-      
-      console.log("Updating campaign with data:", campaignData);
-      
-      // Update campaign
-      await updateCampaign(campaignId, campaignData);
-      
-      // Show success toast
+
+      console.log("Updating campaign base data:", campaignData);
+
+      // 1. Update campaign base details
+      await updateCampaign(campaignId, campaignData); // This calls PUT /api/campaigns/:id
+
+      console.log("Updating targeting rules:", targetingRules);
+
+      // 2. Update targeting rules via POST /api/campaigns/:id/targeting_rules
+      try {
+        // Send the complete set of rules. The backend handles create/update/delete.
+        // Include existing IDs for updates, omit for creates.
+        // Rules not present in the array will be deleted.
+        await api.post(`/api/campaigns/${campaignId}/targeting_rules`, targetingRules);
+        console.log("Targeting rules updated successfully.");
+      } catch (targetingError) {
+        console.error("Failed to update targeting rules:", targetingError);
+        // Show a specific error toast for targeting rules failure
+        toast({
+          title: "Targeting Update Failed",
+          description: `Campaign details updated, but failed to update targeting rules. Please try saving again or contact support.`,
+          variant: "destructive",
+        });
+        // Re-throw the error to prevent the success toast and navigation
+        throw targetingError;
+      }
+
+      // Show success toast (only if both updates succeed)
       toast({
         title: "Campaign updated",
         description: `${name.trim()} has been successfully updated.`,
       });
-      
-      // Navigate back to campaigns list
+
+      // Navigate back to campaigns list (only if both updates succeed)
       router.push("/dashboard/campaigns");
+
     } catch (error) {
-      console.error("Failed to update campaign:", error);
-      setFormError("Failed to update campaign. Please try again.");
+      console.error("Failed to update campaign or targeting rules:", error);
+      // This catches errors from updateCampaign OR the re-thrown targetingError
+      // Keep a general error message or customize based on caught error type if needed
+      setFormError("Failed to update campaign. Please check details and targeting rules, then try again.");
     } finally {
       setIsLoading(false);
     }

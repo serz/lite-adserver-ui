@@ -52,6 +52,17 @@ export class ApiClient {
   private processRequestData(data: any): any {
     if (!data) return data;
     
+    // Check if the data is an array
+    if (Array.isArray(data)) {
+      // If it's an array, process each item individually
+      // Currently, the processing logic only applies to campaign objects
+      // with start/end dates, so we can likely return the array as is.
+      // If specific array item processing was needed, it would go here.
+      // For now, just return a copy of the array.
+      return [...data]; 
+    } 
+    
+    // If it's not an array, assume it's an object and process as before
     // Create a copy of the data to avoid mutating the original
     const processedData = { ...data };
     
