@@ -2,6 +2,16 @@ import { api } from '@/lib/api';
 import { StatsResponse } from '@/types/api';
 import { getTimezone } from '@/lib/timezone';
 
+interface SyncStateResponse {
+  campaigns: {
+    count: number;
+  };
+  zones: {
+    count: number;
+  };
+  last_updated: string;
+}
+
 // In-memory cache for stats data
 interface StatsCache {
   last7DaysStats?: {
@@ -230,5 +240,24 @@ export async function getLast7DaysClicks(): Promise<number> {
     return response.stats.reduce((total, stat) => total + stat.clicks, 0);
   } catch (error) {
     return 0;
+  }
+}
+
+/**
+ * Get current system state (campaign/zone counts)
+ */
+export async function getSyncState(): Promise<SyncStateResponse> {
+  const endpoint = '/api/sync/state';
+  try {
+    // Note: We might want caching here similar to getStats if this is called frequently
+    const response = await api.get<SyncStateResponse>(endpoint);
+    return response;
+  } catch (error) {
+    console.error('Failed to fetch sync state:', error);
+    // Re-throw or return a default/error state
+    if (error instanceof Error && error.message.includes('API key is required')) {
+      throw new Error('Authentication required for sync state. Please ensure you are logged in.');
+    }
+    throw new Error('Failed to load system state.');
   }
 } 

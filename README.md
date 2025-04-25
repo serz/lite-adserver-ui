@@ -17,9 +17,10 @@ A modern, responsive dashboard UI for managing the [Lite Adserver platform](http
 - [x] Campaign creation
 - [x] Campaign edit functionality 
 - [x] Start/pause campaign controls
-- [ ] Fix targeting rules editing (adserver api dependency)
+- [x] Fix targeting rules editing (adserver api dependency)
 - [ ] Add total and average metrics to statistics
 - [ ] View raw ad_events data
+- [ ] SyncStateResponse last_updated show in UI
 
 ## Getting Started
 

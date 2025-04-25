@@ -1,8 +1,6 @@
 "use client";
 
 import DashboardLayout from '@/components/dashboard-layout';
-import { useCampaigns } from '@/lib/context/campaign-context';
-import { useZones } from '@/lib/context/zone-context';
 import { useStats } from '@/lib/context/stats-context';
 import { RecentActivity } from '@/components/recent-activity';
 import { WithAuthGuard } from '@/components/with-auth-guard';
@@ -33,9 +31,14 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { activeCampaignsCount, isLoading: campaignsLoading, error: campaignsError } = useCampaigns();
-  const { activeZonesCount, isLoading: zonesLoading, error: zonesError } = useZones();
-  const { impressions, clicks, isLoading: statsLoading, error: statsError } = useStats();
+  const { 
+    impressions, 
+    clicks, 
+    campaignsCount,
+    zonesCount,
+    isLoading: statsLoading,
+    error: statsError
+  } = useStats();
 
   return (
     <div className="container mx-auto p-6">
@@ -51,17 +54,17 @@ function DashboardContent() {
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Campaigns</h3>
           <div className="text-3xl font-bold">
-            {campaignsLoading ? (
+            {statsLoading ? (
               <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
-            ) : campaignsError ? (
+            ) : statsError ? (
               <span className="text-destructive">!</span>
             ) : (
-              activeCampaignsCount
+              campaignsCount
             )}
           </div>
           <p className="text-sm text-muted-foreground">Active campaigns</p>
-          {campaignsError && (
-            <p className="mt-2 text-xs text-destructive">{campaignsError}</p>
+          {statsError && (
+            <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
         </div>
         
@@ -69,17 +72,17 @@ function DashboardContent() {
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Zones</h3>
           <div className="text-3xl font-bold">
-            {zonesLoading ? (
+            {statsLoading ? (
               <div className="h-8 w-16 animate-pulse rounded bg-muted"></div>
-            ) : zonesError ? (
+            ) : statsError ? (
               <span className="text-destructive">!</span>
             ) : (
-              activeZonesCount
+              zonesCount
             )}
           </div>
           <p className="text-sm text-muted-foreground">Active zones</p>
-          {zonesError && (
-            <p className="mt-2 text-xs text-destructive">{zonesError}</p>
+          {statsError && (
+            <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
         </div>
         

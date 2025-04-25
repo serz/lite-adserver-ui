@@ -1,12 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getLast7DaysImpressions, getLast7DaysClicks } from '@/lib/services/stats';
+import { getLast7DaysImpressions, getLast7DaysClicks, getSyncState } from '@/lib/services/stats';
 import { useAuth } from '@/components/auth-provider';
 
 interface StatsContextType {
   impressions: number;
   clicks: number;
+  campaignsCount: number;
+  zonesCount: number;
   isLoading: boolean;
   error: string | null;
   refetchStats: () => Promise<void>;
@@ -17,6 +19,8 @@ const StatsContext = createContext<StatsContextType | undefined>(undefined);
 export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [impressions, setImpressions] = useState(0);
   const [clicks, setClicks] = useState(0);
+  const [campaignsCount, setCampaignsCount] = useState(0);
+  const [zonesCount, setZonesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
@@ -35,22 +39,37 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     
     console.log('Stats context: Fetching stats...');
     setIsLoading(true);
+    setError(null);
+    dataFetchedRef.current = false;
+
     try {
-      const [impressionsData, clicksData] = await Promise.all([
+      const [impressionsData, clicksData, syncState] = await Promise.all([
         getLast7DaysImpressions(),
-        getLast7DaysClicks()
+        getLast7DaysClicks(),
+        getSyncState()
       ]);
       
       console.log('Stats context: Received impressions:', impressionsData);
       console.log('Stats context: Received clicks:', clicksData);
+      console.log('Stats context: Received sync state:', syncState);
       
       setImpressions(impressionsData);
       setClicks(clicksData);
-      setError(null);
+      setCampaignsCount(syncState.campaigns.count);
+      setZonesCount(syncState.zones.count);
+      
       dataFetchedRef.current = true;
     } catch (err) {
       console.error('Stats context: Error fetching stats:', err);
-      setError('Failed to load statistics data');
+      let errorMessage = 'Failed to load statistics data';
+      if (err instanceof Error) {
+        if (err.message.includes('system state')) {
+          errorMessage = 'Failed to load system state.';
+        } else if (err.message.includes('Authentication required')) {
+          errorMessage = err.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +91,8 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       value={{
         impressions,
         clicks,
+        campaignsCount,
+        zonesCount,
         isLoading,
         error,
         refetchStats,
