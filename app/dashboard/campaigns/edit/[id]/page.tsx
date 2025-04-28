@@ -28,6 +28,8 @@ import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { api } from "@/lib/api"; // Direct API access
 import { CountrySelector } from "@/components/country-selector";
 import { ZoneSelector } from "@/components/zone-selector";
+import { BrowserSelector } from '@/components/browser-selector';
+import { OsSelector } from '@/components/os-selector';
 
 interface EditCampaignPageProps {
   params: {
@@ -95,6 +97,16 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   const [zoneTargetingMethod, setZoneTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
   const [zoneRuleId, setZoneRuleId] = useState<number | null>(null);
   
+  // Browser targeting state
+  const [selectedBrowsers, setSelectedBrowsers] = useState<string[]>([]);
+  const [browserTargetingMethod, setBrowserTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [browserRuleId, setBrowserRuleId] = useState<number | null>(null);
+  
+  // OS targeting state
+  const [selectedOs, setSelectedOs] = useState<string[]>([]);
+  const [osTargetingMethod, setOsTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [osRuleId, setOsRuleId] = useState<number | null>(null);
+  
   // UI state
   const [isLoading, setIsLoading] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
@@ -157,6 +169,18 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
           setZoneRuleId(zoneRule.id);
         }
         
+        // Find browser rule ID
+        const browserRule = rulesResponse.targeting_rule_types.find(rule => rule.name.toLowerCase() === 'browser');
+        if (browserRule) {
+          setBrowserRuleId(browserRule.id);
+        }
+        
+        // Find os rule ID
+        const osRule = rulesResponse.targeting_rule_types.find(rule => rule.name.toLowerCase() === 'os');
+        if (osRule) {
+          setOsRuleId(osRule.id);
+        }
+        
         // Set campaign data
         const campaignData = response;
         setCampaign(campaignData);
@@ -203,6 +227,28 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (zoneTargetRule) {
               setSelectedZoneIds(zoneTargetRule.rule.split(','));
               setZoneTargetingMethod(zoneTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected browsers if browser rule exists
+          if (browserRule) {
+            const browserTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === browserRule.id
+            );
+            if (browserTargetRule) {
+              setSelectedBrowsers(browserTargetRule.rule.split(','));
+              setBrowserTargetingMethod(browserTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected OS if os rule exists
+          if (osRule) {
+            const osTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === osRule.id
+            );
+            if (osTargetRule) {
+              setSelectedOs(osTargetRule.rule.split(','));
+              setOsTargetingMethod(osTargetRule.targeting_method);
             }
           }
         }
@@ -283,6 +329,40 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
     ]);
   }, [selectedZoneIds, zoneTargetingMethod, zoneRuleId]);
   
+  // Apply browser targeting rules
+  useEffect(() => {
+    if (!browserRuleId || selectedBrowsers.length === 0) {
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== browserRuleId));
+      return;
+    }
+    const browserRule = {
+      targeting_rule_type_id: browserRuleId,
+      targeting_method: browserTargetingMethod,
+      rule: selectedBrowsers.join(',')
+    };
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== browserRuleId),
+      browserRule
+    ]);
+  }, [selectedBrowsers, browserTargetingMethod, browserRuleId]);
+  
+  // Apply OS targeting rules
+  useEffect(() => {
+    if (!osRuleId || selectedOs.length === 0) {
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== osRuleId));
+      return;
+    }
+    const osRule = {
+      targeting_rule_type_id: osRuleId,
+      targeting_method: osTargetingMethod,
+      rule: selectedOs.join(',')
+    };
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== osRuleId),
+      osRule
+    ]);
+  }, [selectedOs, osTargetingMethod, osRuleId]);
+  
   // Handle retry
   const handleRetry = () => {
     setIsLoading(true);
@@ -335,6 +415,30 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (zoneTargetRule) {
               setSelectedZoneIds(zoneTargetRule.rule.split(','));
               setZoneTargetingMethod(zoneTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected browsers if browser rule exists
+          if (browserRuleId) {
+            const browserTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === browserRuleId
+            );
+            
+            if (browserTargetRule) {
+              setSelectedBrowsers(browserTargetRule.rule.split(','));
+              setBrowserTargetingMethod(browserTargetRule.targeting_method);
+            }
+          }
+          
+          // Set selected OS if os rule exists
+          if (osRuleId) {
+            const osTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === osRuleId
+            );
+            
+            if (osTargetRule) {
+              setSelectedOs(osTargetRule.rule.split(','));
+              setOsTargetingMethod(osTargetRule.targeting_method);
             }
           }
         }
@@ -674,6 +778,44 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                     />
                     <p className="text-xs text-muted-foreground">
                       Target specific ad placement zones. If no zones selected, all zones will be targeted.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Browser Targeting */}
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label className="flex items-center">
+                      Browser Targeting
+                    </Label>
+                    <BrowserSelector
+                      selectedBrowsers={selectedBrowsers}
+                      onChange={setSelectedBrowsers}
+                      targetingMethod={browserTargetingMethod}
+                      onTargetingMethodChange={setBrowserTargetingMethod}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Target users by their browser. If no browsers selected, all browsers will be targeted.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* OS Targeting */}
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label className="flex items-center">
+                      OS Targeting
+                    </Label>
+                    <OsSelector
+                      selectedOs={selectedOs}
+                      onChange={setSelectedOs}
+                      targetingMethod={osTargetingMethod}
+                      onTargetingMethodChange={setOsTargetingMethod}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Target users by their operating system. If no OS selected, all OSes will be targeted.
                     </p>
                   </div>
                 </div>

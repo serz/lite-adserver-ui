@@ -1,0 +1,165 @@
+'use client';
+
+import { useState, useCallback } from 'react';
+import { Check, ChevronsUpDown, X, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Command, CommandEmpty, CommandGroup, CommandInput } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+const OS_LIST = [
+  { id: 'windows_10', name: 'Windows 10' },
+  { id: 'windows_11', name: 'Windows 11' },
+  { id: 'android', name: 'Android' },
+  { id: 'ios', name: 'iOS' },
+  { id: 'macos', name: 'macOS' },
+  { id: 'linux', name: 'Linux (Ubuntu, Debian, etc.)' },
+  { id: 'windows_7', name: 'Windows 7' },
+  { id: 'harmonyos', name: 'HarmonyOS' },
+  { id: 'kaios', name: 'KaiOS' },
+  { id: 'chrome_os', name: 'Chrome OS' },
+];
+
+interface OsSelectorProps {
+  selectedOs: string[];
+  onChange: (value: string[]) => void;
+  disabled?: boolean;
+  targetingMethod: 'whitelist' | 'blacklist';
+  onTargetingMethodChange: (method: 'whitelist' | 'blacklist') => void;
+}
+
+export function OsSelector({
+  selectedOs,
+  onChange,
+  disabled = false,
+  targetingMethod,
+  onTargetingMethodChange,
+}: OsSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+
+  const filteredOs = OS_LIST.filter((os) => {
+    if (!searchValue) return true;
+    return (
+      os.name.toLowerCase().includes(searchValue.toLowerCase()) ||
+      os.id.toLowerCase().includes(searchValue.toLowerCase())
+    );
+  });
+
+  const handleSelect = useCallback((id: string) => {
+    if (selectedOs.includes(id)) {
+      onChange(selectedOs.filter((o) => o !== id));
+    } else {
+      onChange([...selectedOs, id]);
+    }
+  }, [selectedOs, onChange]);
+
+  const removeOs = useCallback((e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    onChange(selectedOs.filter((o) => o !== id));
+  }, [selectedOs, onChange]);
+
+  const getOsName = (id: string) => {
+    const os = OS_LIST.find((o) => o.id === id);
+    return os ? os.name : id;
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex space-x-2 items-center mb-2">
+        <Button
+          type="button"
+          size="sm"
+          variant={targetingMethod === 'whitelist' ? 'default' : 'outline'}
+          onClick={() => onTargetingMethodChange('whitelist')}
+          disabled={disabled}
+          className="text-xs px-3"
+        >
+          Include (Whitelist)
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={targetingMethod === 'blacklist' ? 'default' : 'outline'}
+          onClick={() => onTargetingMethodChange('blacklist')}
+          disabled={disabled}
+          className="text-xs px-3"
+        >
+          Exclude (Blacklist)
+        </Button>
+      </div>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            disabled={disabled}
+            className={cn(
+              "w-full justify-between",
+              !selectedOs.length && "text-muted-foreground"
+            )}
+          >
+            {selectedOs.length > 0
+              ? `${selectedOs.length} ${selectedOs.length === 1 ? 'OS' : 'OSes'} selected`
+              : "Select operating systems"}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-[350px] p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder="Search operating systems..."
+              value={searchValue}
+              onValueChange={setSearchValue}
+            />
+            {filteredOs.length === 0 && (
+              <CommandEmpty>No operating systems found.</CommandEmpty>
+            )}
+            <CommandGroup className="max-h-[300px] overflow-auto">
+              {filteredOs.map((os) => (
+                <div
+                  key={os.id}
+                  className={cn(
+                    "flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground",
+                    selectedOs.includes(os.id) && "bg-accent/50"
+                  )}
+                  onClick={() => handleSelect(os.id)}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      selectedOs.includes(os.id) ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  <span className="flex-1">
+                    {os.name}
+                  </span>
+                </div>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+      {selectedOs.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {selectedOs.map((id) => (
+            <Badge
+              key={id}
+              variant="paused"
+              highContrast={true}
+              radius="sm"
+            >
+              {getOsName(id)}
+              <X
+                className="ml-1 h-3 w-3 cursor-pointer hover:text-destructive"
+                onClick={(e) => removeOs(e, id)}
+              />
+            </Badge>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+} 

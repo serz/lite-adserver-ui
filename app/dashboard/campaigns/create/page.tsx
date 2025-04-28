@@ -27,6 +27,8 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { CountrySelector } from "@/components/country-selector";
 import { ZoneSelector } from "@/components/zone-selector";
+import { BrowserSelector } from '@/components/browser-selector';
+import { OsSelector } from '@/components/os-selector';
 
 export default function CreateCampaignPage() {
   return (
@@ -72,6 +74,16 @@ function CampaignForm() {
   // Zone targeting state
   const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([]);
   const [zoneTargetingMethod, setZoneTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  
+  // Browser targeting state
+  const [selectedBrowsers, setSelectedBrowsers] = useState<string[]>([]);
+  const [browserTargetingMethod, setBrowserTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [browserRuleId, setBrowserRuleId] = useState<number | null>(null);
+
+  // OS targeting state
+  const [selectedOs, setSelectedOs] = useState<string[]>([]);
+  const [osTargetingMethod, setOsTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
+  const [osRuleId, setOsRuleId] = useState<number | null>(null);
   
   // Data for dropdowns
   const [zones, setZones] = useState<Zone[]>([]);
@@ -129,6 +141,22 @@ function CampaignForm() {
         );
         if (zoneRule) {
           setZoneRuleId(zoneRule.id);
+        }
+        
+        // Find browser rule ID
+        const browserRule = ruleTypesResponse.targeting_rule_types.find(
+          rule => rule.name.toLowerCase() === 'browser'
+        );
+        if (browserRule) {
+          setBrowserRuleId(browserRule.id);
+        }
+        
+        // Find os rule ID
+        const osRule = ruleTypesResponse.targeting_rule_types.find(
+          rule => rule.name.toLowerCase() === 'os'
+        );
+        if (osRule) {
+          setOsRuleId(osRule.id);
         }
       } catch (error) {
         console.error("Failed to load data:", error);
@@ -203,6 +231,40 @@ function CampaignForm() {
       zoneRule
     ]);
   }, [selectedZoneIds, zoneTargetingMethod, zoneRuleId]);
+  
+  // Apply browser targeting rules
+  useEffect(() => {
+    if (!browserRuleId || selectedBrowsers.length === 0) {
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== browserRuleId));
+      return;
+    }
+    const browserRule = {
+      targeting_rule_type_id: browserRuleId,
+      targeting_method: browserTargetingMethod,
+      rule: selectedBrowsers.join(',')
+    };
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== browserRuleId),
+      browserRule
+    ]);
+  }, [selectedBrowsers, browserTargetingMethod, browserRuleId]);
+
+  // Apply OS targeting rules
+  useEffect(() => {
+    if (!osRuleId || selectedOs.length === 0) {
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== osRuleId));
+      return;
+    }
+    const osRule = {
+      targeting_rule_type_id: osRuleId,
+      targeting_method: osTargetingMethod,
+      rule: selectedOs.join(',')
+    };
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== osRuleId),
+      osRule
+    ]);
+  }, [selectedOs, osTargetingMethod, osRuleId]);
   
   // Form validation
   const validateForm = () => {
@@ -488,6 +550,44 @@ function CampaignForm() {
                   />
                   <p className="text-xs text-muted-foreground">
                     Target specific ad placement zones. If no zones selected, all zones will be targeted.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Browser Targeting */}
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label className="flex items-center">
+                    Browser Targeting
+                  </Label>
+                  <BrowserSelector
+                    selectedBrowsers={selectedBrowsers}
+                    onChange={setSelectedBrowsers}
+                    targetingMethod={browserTargetingMethod}
+                    onTargetingMethodChange={setBrowserTargetingMethod}
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Target users by their browser. If no browsers selected, all browsers will be targeted.
+                  </p>
+                </div>
+              </div>
+              
+              {/* OS Targeting */}
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label className="flex items-center">
+                    OS Targeting
+                  </Label>
+                  <OsSelector
+                    selectedOs={selectedOs}
+                    onChange={setSelectedOs}
+                    targetingMethod={osTargetingMethod}
+                    onTargetingMethodChange={setOsTargetingMethod}
+                    disabled={isLoading}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Target users by their operating system. If no OS selected, all OSes will be targeted.
                   </p>
                 </div>
               </div>
