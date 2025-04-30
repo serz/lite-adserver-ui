@@ -33,7 +33,7 @@ export function RecentActivity() {
       type: 'campaign' as const,
       created_at: campaign.created_at,
       status: campaign.status,
-      url: `/dashboard/campaigns/${campaign.id}`,
+      url: `/dashboard/campaigns/edit/${campaign.id}`,
     })),
     ...recentActiveZones.map((zone: Zone) => ({
       id: zone.id,
@@ -41,7 +41,7 @@ export function RecentActivity() {
       type: 'zone' as const, 
       created_at: zone.created_at,
       status: zone.status,
-      url: `/dashboard/zones/${zone.id}`,
+      url: `/dashboard/zones`,
     })),
   ].sort((a, b) => b.created_at - a.created_at).slice(0, 5);
 
