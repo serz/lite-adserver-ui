@@ -271,6 +271,7 @@ function ZonesContent() {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">ID</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Site URL</th>
@@ -282,6 +283,7 @@ function ZonesContent() {
               <tbody>
                 {zones.map(zone => (
                   <tr key={zone.id} className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3 text-sm">{zone.id}</td>
                     <td className="px-4 py-3 text-sm">{zone.name}</td>
                     <td className="px-4 py-3 text-sm">
                       <Badge 
