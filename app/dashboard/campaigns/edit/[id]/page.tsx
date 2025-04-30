@@ -794,6 +794,11 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                             Tablet
                             <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
                           </ToggleGroupItem>
+                          <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading}>
+                            <Tv className="h-4 w-4 mr-1" />
+                            TV
+                            <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
+                          </ToggleGroupItem>
                         </ToggleGroup>
                       </div>
                       <p className="text-xs text-muted-foreground">
