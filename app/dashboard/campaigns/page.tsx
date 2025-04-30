@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
-import { getCampaigns, updateCampaign } from '@/lib/services/campaigns';
-import { Campaign } from '@/types/api';
+import { getCampaigns, updateCampaign, getCampaignTargetingRules } from '@/lib/services/campaigns';
+import { Campaign, TargetingRule, TargetingRuleType } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Play, Pause, Edit } from 'lucide-react';
+import { RefreshCw, Play, Pause, Edit, ChevronRight, ChevronDown } from 'lucide-react';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 
 export default function CampaignsPage() {
   return (
@@ -45,6 +46,14 @@ function CampaignsContent() {
   const hasInitiallyFetchedRef = useRef(false);
   // Add toast for notifications
   const { toast } = useToast();
+  // Track expanded campaigns
+  const [expandedCampaigns, setExpandedCampaigns] = useState<{[campaignId: number]: boolean}>({});
+  // Store targeting rules by campaign ID
+  const [targetingRulesByCampaign, setTargetingRulesByCampaign] = useState<{[campaignId: number]: TargetingRule[]}>({});
+  // Track loading state for targeting rules
+  const [loadingTargetingRules, setLoadingTargetingRules] = useState<{[campaignId: number]: boolean}>({});
+  // Store targeting rule types
+  const [targetingRuleTypes, setTargetingRuleTypes] = useState<TargetingRuleType[]>([]);
 
   const fetchCampaigns = useCallback(async (forceFetch = false) => {
     // Only set loading state if we're doing an initial fetch or a forced refetch
@@ -73,13 +82,24 @@ function CampaignsContent() {
     }
   }, []);
 
-  // Call fetchCampaigns only once when the component mounts
+  // Fetch targeting rule types for displaying rule names
+  const fetchTargetingRuleTypes = useCallback(async () => {
+    try {
+      const response = await getTargetingRuleTypes({ useCache: true });
+      setTargetingRuleTypes(response.targeting_rule_types);
+    } catch (err) {
+      console.error('Failed to load targeting rule types:', err);
+    }
+  }, []);
+
+  // Call fetchCampaigns and fetchTargetingRuleTypes when the component mounts
   useEffect(() => {
     if (!hasInitiallyFetchedRef.current) {
       console.log('CampaignsPage: Initial data fetch');
       fetchCampaigns();
+      fetchTargetingRuleTypes();
     }
-  }, [fetchCampaigns]);
+  }, [fetchCampaigns, fetchTargetingRuleTypes]);
 
   // Handle manual refresh with forced refetch
   const handleRefresh = async () => {
@@ -138,6 +158,48 @@ function CampaignsContent() {
       default:
         return 'default';
     }
+  };
+
+  // Toggle campaign expansion and fetch targeting rules if needed
+  const toggleCampaignExpansion = async (campaignId: number) => {
+    // Toggle the expansion state
+    setExpandedCampaigns(prev => ({
+      ...prev,
+      [campaignId]: !prev[campaignId]
+    }));
+    
+    // If expanding and we haven't loaded targeting rules yet, fetch them
+    if (!expandedCampaigns[campaignId] && !targetingRulesByCampaign[campaignId]) {
+      setLoadingTargetingRules(prev => ({
+        ...prev,
+        [campaignId]: true
+      }));
+      
+      try {
+        const rules = await getCampaignTargetingRules(campaignId);
+        setTargetingRulesByCampaign(prev => ({
+          ...prev,
+          [campaignId]: rules
+        }));
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: "Failed to load targeting rules. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingTargetingRules(prev => ({
+          ...prev,
+          [campaignId]: false
+        }));
+      }
+    }
+  };
+
+  // Get rule type name by ID
+  const getRuleTypeName = (ruleTypeId: number): string => {
+    const ruleType = targetingRuleTypes.find(type => type.id === ruleTypeId);
+    return ruleType ? ruleType.name : `Rule Type ${ruleTypeId}`;
   };
 
   return (
@@ -201,49 +263,101 @@ function CampaignsContent() {
             </thead>
             <tbody>
               {campaigns.map(campaign => (
-                <tr key={campaign.id} className="border-b last:border-0 hover:bg-muted/50">
-                  <td className="px-4 py-3 text-sm">{campaign.name}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <Badge 
-                      variant={getStatusVariant(campaign.status)} 
-                      highContrast={campaign.status === 'active'} 
-                      radius="sm"
-                    >
-                      {campaign.status}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-sm">{formatDate(campaign.start_date)}</td>
-                  <td className="px-4 py-3 text-sm">{formatDate(campaign.end_date, { fallback: 'N/A' })}</td>
-                  <td className="px-4 py-3 text-sm">{formatDate(campaign.created_at)}</td>
-                  <td className="px-4 py-3 text-sm">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant={campaign.status === 'active' ? 'ghost' : 'outline'}
-                        size="icon"
-                        className="h-8 w-8"
-                        title={campaign.status === 'active' ? 'Pause campaign' : 'Start campaign'}
-                        onClick={() => handleToggleStatus(campaign)}
-                        disabled={campaign.status === 'completed'}
+                <React.Fragment key={campaign.id}>
+                  <tr className="border-b last:border-0 hover:bg-muted/50">
+                    <td className="px-4 py-3 text-sm">
+                      <Button 
+                        variant="ghost" 
+                        className="h-auto p-0 flex items-center hover:bg-transparent hover:text-primary"
+                        onClick={() => toggleCampaignExpansion(campaign.id)}
                       >
-                        {campaign.status === 'active' ? (
-                          <Pause className="h-4 w-4 text-amber-500" />
-                        ) : (
-                          <Play className="h-4 w-4 text-green-500" />
-                        )}
+                        {expandedCampaigns[campaign.id] 
+                          ? <ChevronDown className="h-4 w-4 mr-2 text-muted-foreground" /> 
+                          : <ChevronRight className="h-4 w-4 mr-2 text-muted-foreground" />
+                        }
+                        <span>{campaign.name}</span>
                       </Button>
-                      <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <Badge 
+                        variant={getStatusVariant(campaign.status)} 
+                        highContrast={campaign.status === 'active'} 
+                        radius="sm"
+                      >
+                        {campaign.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm">{formatDate(campaign.start_date)}</td>
+                    <td className="px-4 py-3 text-sm">{formatDate(campaign.end_date, { fallback: 'N/A' })}</td>
+                    <td className="px-4 py-3 text-sm">{formatDate(campaign.created_at)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex items-center space-x-2">
                         <Button
-                          variant="outline"
+                          variant={campaign.status === 'active' ? 'ghost' : 'outline'}
                           size="icon"
                           className="h-8 w-8"
-                          title="Edit campaign"
+                          title={campaign.status === 'active' ? 'Pause campaign' : 'Start campaign'}
+                          onClick={() => handleToggleStatus(campaign)}
+                          disabled={campaign.status === 'completed'}
                         >
-                          <Edit className="h-4 w-4" />
+                          {campaign.status === 'active' ? (
+                            <Pause className="h-4 w-4 text-amber-500" />
+                          ) : (
+                            <Play className="h-4 w-4 text-green-500" />
+                          )}
                         </Button>
-                      </Link>
-                    </div>
-                  </td>
-                </tr>
+                        <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Edit campaign"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                  {expandedCampaigns[campaign.id] && (
+                    <tr className="bg-muted/20 border-b">
+                      <td colSpan={6} className="px-6 py-4">
+                        <div className="border-l-2 border-primary/50 pl-4">
+                          <h4 className="text-sm font-medium mb-3">Targeting Rules</h4>
+                          
+                          {loadingTargetingRules[campaign.id] ? (
+                            <div className="h-10 animate-pulse rounded-md bg-muted w-full"></div>
+                          ) : !targetingRulesByCampaign[campaign.id] || targetingRulesByCampaign[campaign.id].length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No targeting rules found for this campaign</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {targetingRulesByCampaign[campaign.id].map((rule: TargetingRule, index: number) => (
+                                <div key={index} className="rounded-md border bg-card/50 p-3 text-sm">
+                                  <div className="flex justify-between">
+                                    <div className="mt-2 text-muted-foreground">
+                                      <span className="text-xs uppercase font-medium text-muted-foreground/70 mr-1">{getRuleTypeName(rule.targeting_rule_type_id)}:</span>
+                                      {rule.rule.split(',').map((value, i) => (
+                                        <React.Fragment key={i}>
+                                          <Badge variant="outline" className="mr-1 mb-1">
+                                            {value.trim()}
+                                          </Badge>
+                                          {i < rule.rule.split(',').length - 1 && ' '}
+                                        </React.Fragment>
+                                      ))}
+                                    </div>
+                                    <Badge variant={rule.targeting_method === 'whitelist' ? 'active' : 'destructive'} radius="sm">
+                                      {rule.targeting_method === 'whitelist' ? 'Include' : 'Exclude'}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

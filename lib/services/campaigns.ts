@@ -233,4 +233,17 @@ export async function getCampaign(id: number, options?: {
     console.error(`Error fetching campaign with ID: ${id}:`, error);
     throw error;
   }
+}
+
+/**
+ * Get targeting rules for a campaign by ID
+ */
+export async function getCampaignTargetingRules(campaignId: number): Promise<TargetingRule[]> {
+  try {
+    const response = await api.get<{ targeting_rules: TargetingRule[] }>(`/api/campaigns/${campaignId}/targeting_rules`);
+    return response.targeting_rules;
+  } catch (error) {
+    console.error(`Error fetching targeting rules for campaign ${campaignId}:`, error);
+    throw error;
+  }
 } 
