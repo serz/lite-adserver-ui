@@ -8,6 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { COUNTRIES } from '@/lib/constants/countries';
 import { cn } from '@/lib/utils';
+import { TargetingButton } from '@/components/targeting-button';
 
 interface CountrySelectorProps {
   selectedCountries: string[];
@@ -64,26 +65,22 @@ export function CountrySelector({
     <div className="space-y-2">
       {/* Targeting Method Selection */}
       <div className="flex space-x-2 items-center mb-2">
-        <Button
-          type="button"
-          size="sm"
-          variant={targetingMethod === 'whitelist' ? 'default' : 'outline'}
+        <TargetingButton
+          active={targetingMethod === 'whitelist'}
           onClick={() => onTargetingMethodChange('whitelist')}
           disabled={disabled}
-          className="text-xs px-3"
+          indicator="green"
         >
           Include (Whitelist)
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant={targetingMethod === 'blacklist' ? 'default' : 'outline'}
+        </TargetingButton>
+        <TargetingButton
+          active={targetingMethod === 'blacklist'}
           onClick={() => onTargetingMethodChange('blacklist')}
           disabled={disabled}
-          className="text-xs px-3"
+          indicator="red"
         >
           Exclude (Blacklist)
-        </Button>
+        </TargetingButton>
       </div>
       
       <Popover open={open} onOpenChange={setOpen}>

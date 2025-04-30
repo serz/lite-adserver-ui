@@ -14,7 +14,7 @@ import { TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -496,14 +496,22 @@ function CampaignForm() {
                       <ToggleGroupItem value="desktop" aria-label="Desktop" disabled={isLoading}>
                         <MonitorIcon className="h-4 w-4 mr-1" />
                         Desktop
+                        <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("desktop") ? "bg-green-500" : "bg-red-500"}`}></span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="mobile" aria-label="Mobile" disabled={isLoading}>
                         <SmartphoneIcon className="h-4 w-4 mr-1" />
                         Mobile
+                        <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("mobile") ? "bg-green-500" : "bg-red-500"}`}></span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="tablet" aria-label="Tablet" disabled={isLoading}>
                         <TabletIcon className="h-4 w-4 mr-1" />
                         Tablet
+                        <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading}>
+                        <Tv className="h-4 w-4 mr-1" />
+                        TV
+                        <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>
