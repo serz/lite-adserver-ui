@@ -5,6 +5,13 @@ import { useStats } from '@/lib/context/stats-context';
 import { RecentActivity } from '@/components/recent-activity';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import { DemoInstanceWarning } from '@/components/demo-instance-warning';
+import { HelpCircle } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export default function DashboardPage() {
   return (
@@ -62,7 +69,19 @@ function DashboardContent() {
               campaignsCount
             )}
           </div>
-          <p className="text-sm text-muted-foreground">Active campaigns</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm text-muted-foreground">Active campaigns</p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger>
+                  <HelpCircle className="h-3.5 w-3.5 text-muted-foreground/70" />
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p>This shows campaigns currently loaded in the ad server. Some campaigns may not appear here due to targeting rules like date range restrictions, even if they exist in your campaigns page.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           {statsError && (
             <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
