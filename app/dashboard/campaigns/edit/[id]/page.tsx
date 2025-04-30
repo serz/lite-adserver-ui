@@ -85,6 +85,10 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   // Device targeting state
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [deviceTypeRuleId, setDeviceTypeRuleId] = useState<number | null>(null);
+
+  // Unique users targeting state
+  const [uniqueUsersValue, setUniqueUsersValue] = useState<string>("");
+  const [uniqueUsersRuleId, setUniqueUsersRuleId] = useState<number | null>(null);  
   
   // Country targeting state
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -181,6 +185,14 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
           setOsRuleId(osRule.id);
         }
         
+        // Find unique users rule ID
+        const uniqueUsersRule = rulesResponse.targeting_rule_types.find(
+          rule => rule.name.toLowerCase() === 'unique_users'
+        );
+        if (uniqueUsersRule) {
+          setUniqueUsersRuleId(uniqueUsersRule.id);
+        }
+        
         // Set campaign data
         const campaignData = response;
         setCampaign(campaignData);
@@ -249,6 +261,17 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (osTargetRule) {
               setSelectedOs(osTargetRule.rule.split(','));
               setOsTargetingMethod(osTargetRule.targeting_method);
+            }
+          }
+          
+          // Set unique users if unique users rule exists
+          if (uniqueUsersRule) {
+            const uniqueUsersTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === uniqueUsersRule.id
+            );
+            if (uniqueUsersTargetRule) {
+              // Extract the number from the rule format, which is number,hours
+              setUniqueUsersValue(uniqueUsersTargetRule.rule.split(',')[0]);
             }
           }
         }
@@ -363,6 +386,28 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
     ]);
   }, [selectedOs, osTargetingMethod, osRuleId]);
   
+  // Apply unique users targeting rules
+  useEffect(() => {
+    if (!uniqueUsersRuleId || !uniqueUsersValue) {
+      // Remove any existing unique users targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== uniqueUsersRuleId));
+      return;
+    }
+    
+    // Create the unique users targeting rule - format: number,hours (we hardcode 24 for hours)
+    const uniqueUsersRule = {
+      targeting_rule_type_id: uniqueUsersRuleId,
+      targeting_method: "whitelist" as const, // Always use whitelist for unique users
+      rule: `${uniqueUsersValue},24`
+    };
+    
+    // Update targeting rules, replacing any existing unique users rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== uniqueUsersRuleId),
+      uniqueUsersRule
+    ]);
+  }, [uniqueUsersValue, uniqueUsersRuleId]);
+  
   // Handle retry
   const handleRetry = () => {
     setIsLoading(true);
@@ -439,6 +484,17 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             if (osTargetRule) {
               setSelectedOs(osTargetRule.rule.split(','));
               setOsTargetingMethod(osTargetRule.targeting_method);
+            }
+          }
+          
+          // Set unique users if unique users rule exists
+          if (uniqueUsersRuleId) {
+            const uniqueUsersTargetRule = campaignData.targeting_rules.find(
+              rule => rule.targeting_rule_type_id === uniqueUsersRuleId
+            );
+            if (uniqueUsersTargetRule) {
+              // Extract the number from the rule format, which is number,hours
+              setUniqueUsersValue(uniqueUsersTargetRule.rule.split(',')[0]);
             }
           }
         }
@@ -736,15 +792,33 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                           Tablet
                           <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading}>
-                          <Tv className="h-4 w-4 mr-1" />
-                          TV
-                          <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
-                        </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
                     <p className="text-xs text-muted-foreground">
                       Select which device types to target. If none selected, all device types will be targeted.
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Unique Users Targeting */}
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label htmlFor="unique-users">Unique Users</Label>
+                    <div className="flex items-center">
+                      <Input
+                        id="unique-users"
+                        type="number"
+                        min="1"
+                        placeholder="Enter number"
+                        value={uniqueUsersValue}
+                        onChange={(e) => setUniqueUsersValue(e.target.value)}
+                        disabled={isLoading}
+                        className="max-w-[150px]"
+                      />
+                      <span className="ml-2 text-sm text-muted-foreground">unique visits per 24h</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Limit the number of times an ad can be shown to a unique user in a 24-hour period.
                     </p>
                   </div>
                 </div>

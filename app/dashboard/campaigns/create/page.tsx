@@ -85,6 +85,10 @@ function CampaignForm() {
   const [osTargetingMethod, setOsTargetingMethod] = useState<'whitelist' | 'blacklist'>('whitelist');
   const [osRuleId, setOsRuleId] = useState<number | null>(null);
   
+  // Unique users targeting state
+  const [uniqueUsersValue, setUniqueUsersValue] = useState<string>("");
+  const [uniqueUsersRuleId, setUniqueUsersRuleId] = useState<number | null>(null);
+  
   // Data for dropdowns
   const [zones, setZones] = useState<Zone[]>([]);
   const [targetingRuleTypes, setTargetingRuleTypes] = useState<{id: number, name: string}[]>([]);
@@ -157,6 +161,14 @@ function CampaignForm() {
         );
         if (osRule) {
           setOsRuleId(osRule.id);
+        }
+        
+        // Find unique users rule ID
+        const uniqueUsersRule = ruleTypesResponse.targeting_rule_types.find(
+          rule => rule.name.toLowerCase() === 'unique_users'
+        );
+        if (uniqueUsersRule) {
+          setUniqueUsersRuleId(uniqueUsersRule.id);
         }
       } catch (error) {
         console.error("Failed to load data:", error);
@@ -265,6 +277,28 @@ function CampaignForm() {
       osRule
     ]);
   }, [selectedOs, osTargetingMethod, osRuleId]);
+  
+  // Apply unique users targeting rules
+  useEffect(() => {
+    if (!uniqueUsersRuleId || !uniqueUsersValue) {
+      // Remove any existing unique users targeting rules
+      setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== uniqueUsersRuleId));
+      return;
+    }
+    
+    // Create the unique users targeting rule - format: number,hours (we hardcode 24 for hours)
+    const uniqueUsersRule = {
+      targeting_rule_type_id: uniqueUsersRuleId,
+      targeting_method: "whitelist" as const, // Always use whitelist for unique users
+      rule: `${uniqueUsersValue},24`
+    };
+    
+    // Update targeting rules, replacing any existing unique users rule
+    setTargetingRules(prev => [
+      ...prev.filter(rule => rule.targeting_rule_type_id !== uniqueUsersRuleId),
+      uniqueUsersRule
+    ]);
+  }, [uniqueUsersValue, uniqueUsersRuleId]);
   
   // Form validation
   const validateForm = () => {
@@ -517,6 +551,29 @@ function CampaignForm() {
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Select which device types to target. If none selected, all device types will be targeted.
+                  </p>
+                </div>
+              </div>
+              
+              {/* Unique Users Targeting */}
+              <div className="space-y-4">
+                <div className="flex flex-col space-y-2">
+                  <Label htmlFor="unique-users">Unique Users</Label>
+                  <div className="flex items-center">
+                    <Input
+                      id="unique-users"
+                      type="number"
+                      min="1"
+                      placeholder="Enter number"
+                      value={uniqueUsersValue}
+                      onChange={(e) => setUniqueUsersValue(e.target.value)}
+                      disabled={isLoading}
+                      className="max-w-[150px]"
+                    />
+                    <span className="ml-2 text-sm text-muted-foreground">unique visits per 24h</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Limit the number of times an ad can be shown to a unique user in a 24-hour period.
                   </p>
                 </div>
               </div>
