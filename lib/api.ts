@@ -15,6 +15,10 @@ const DEFAULT_API_OPTIONS: ApiOptions = {
   },
 };
 
+const namespace = typeof window !== 'undefined'
+  ? window.location.hostname.split('.')[0]
+  : '';
+
 export class ApiClient {
   private baseUrl: string;
   private headers: Record<string, string>;
@@ -28,6 +32,7 @@ export class ApiClient {
 
     if (options.apiKey) {
       this.headers['Authorization'] = `Bearer ${options.apiKey}`;
+      this.headers['x-namespace'] = namespace;
     }
   }
 
@@ -36,6 +41,7 @@ export class ApiClient {
    */
   updateApiKey(apiKey: string): void {
     this.headers['Authorization'] = `Bearer ${apiKey}`;
+    this.headers['x-namespace'] = namespace;
   }
 
   /**
