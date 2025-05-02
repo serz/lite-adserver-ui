@@ -40,7 +40,6 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     console.log('Stats context: Fetching stats...');
     setIsLoading(true);
     setError(null);
-    dataFetchedRef.current = false;
 
     try {
       const [impressionsData, clicksData, syncState] = await Promise.all([
@@ -65,8 +64,9 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       if (err instanceof Error) {
         if (err.message.includes('system state')) {
           errorMessage = 'Failed to load system state.';
-        } else if (err.message.includes('Authentication required')) {
+        } else if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
           errorMessage = err.message;
+          dataFetchedRef.current = true;
         }
       }
       setError(errorMessage);

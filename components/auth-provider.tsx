@@ -89,6 +89,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/login');
   };
 
+  // Add a global error handler for API authentication errors
+  useEffect(() => {
+    const handleApiErrors = (event: ErrorEvent) => {
+      // Check if the error is related to invalid/expired API key
+      if (
+        event.error &&
+        typeof event.error.message === 'string' &&
+        (event.error.message.includes('API key is invalid') || 
+         event.error.message.includes('API key is expired'))
+      ) {
+        console.error('AuthProvider: Detected invalid API key, logging out');
+        // Logout the user when an invalid token is detected
+        logout();
+      }
+    };
+
+    // Add the global error handler
+    window.addEventListener('error', handleApiErrors);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('error', handleApiErrors);
+    };
+  }, [logout]);
+
   return (
     <AuthContext.Provider value={{ 
       isAuthenticated, 

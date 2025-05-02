@@ -70,6 +70,11 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     } catch (err) {
       console.error('Stats page context: Error fetching stats:', err);
       setError(err instanceof Error ? err.message : 'Failed to load stats');
+      
+      // Mark as attempted when we have auth errors to prevent retrying
+      if (err instanceof Error && (err.message.includes('Authentication required') || err.message.includes('API key is required'))) {
+        dataFetchAttemptedRef.current = true;
+      }
     } finally {
       setIsLoading(false);
     }
@@ -106,11 +111,14 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthReady && isAuthenticated && apiInitialized) {
       if (dataFetchAttemptedRef.current) {
-        console.log('Stats page context: Refetching due to filter change');
-        fetchStats();
+        // Only refetch if we don't have an authentication error
+        if (!error?.includes('Authentication required') && !error?.includes('API key is required')) {
+          console.log('Stats page context: Refetching due to filter change');
+          fetchStats();
+        }
       }
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized, fetchStats, dateRange, campaignIds, zoneIds, groupBy]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, fetchStats, dateRange, campaignIds, zoneIds, groupBy, error]);
 
   return (
     <StatsPageContext.Provider

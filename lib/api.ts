@@ -131,9 +131,21 @@ export class ApiClient {
           const errorData = await response.json() as ApiError;
           const errorMessage = errorData.error || `API error (${response.status})`;
           console.error(`API client: Request failed with status ${response.status}:`, errorMessage);
+          
+          // Handle auth errors specifically
+          if (response.status === 401 || response.status === 403) {
+            throw new Error('API key is invalid or expired. Please log in again.');
+          }
+          
           throw new Error(errorMessage);
         }
         console.error(`API client: Request failed with status ${response.status}`);
+        
+        // Handle auth errors specifically
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('API key is invalid or expired. Please log in again.');
+        }
+        
         throw new Error(`API error (${response.status})`);
       }
 
