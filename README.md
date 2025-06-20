@@ -28,7 +28,7 @@ A modern, responsive dashboard UI for managing the [Lite Adserver platform](http
 
 - Node.js 18.x or higher
 - npm or yarn
-- [Lite Adserver](https://github.com/serz/lite-adserver) backend running
+- Access to a [Lite Adserver](https://github.com/serz/lite-adserver) instance (e.g., [lite-adserver.affset.com](https://lite-adserver.affset.com))
 
 ### Installation
 
@@ -45,16 +45,14 @@ npm install
 yarn
 ```
 
-3. Copy the environment variables example file and edit it
-```bash
-cp .env.example .env.local
-```
+3. Environment variables setup
 
-Edit the `.env.local` file with your specific configuration:
-```
-NEXT_PUBLIC_AD_SERVER_URL=https://your-api-url.com
-NEXT_PUBLIC_TIMEZONE=your-region/country-timezone
-```
+Environment variables are pre-configured in `wrangler.toml` and work automatically for:
+- **Local development**: `wrangler pages dev`
+- **Preview deployments**: Cloudflare Pages preview branches  
+- **Production deployments**: Cloudflare Pages production branch
+
+No `.env.local` file needed! The configuration is managed centrally in `wrangler.toml`.
 
 4. Start the development server
 ```bash
@@ -85,7 +83,7 @@ The dashboard integrates with the [Lite Adserver API](https://github.com/serz/li
 
 ### Backend Connection
 
-This UI dashboard is designed to work with the [Lite Adserver](https://github.com/serz/lite-adserver) backend. Make sure you have the backend running and properly configured before using this dashboard.
+This UI dashboard connects to the [Lite Adserver](https://github.com/serz/lite-adserver) backend at [lite-adserver.affset.com](https://lite-adserver.affset.com). The API client automatically handles authentication and communication with the ad server.
 
 ## Authentication
 
@@ -108,7 +106,39 @@ yarn test
 
 ## Deployment
 
-This project is configured for easy deployment on Vercel. Just connect your repository to Vercel for automatic deployments.
+This project is configured for deployment on Cloudflare Pages with automatic GitHub integration.
+
+### Manual Deployment
+
+1. Install Wrangler CLI:
+```bash
+npm install -g wrangler
+```
+
+2. Login to Cloudflare:
+```bash
+wrangler login
+```
+
+3. Build and deploy:
+```bash
+npm run build:cf
+wrangler pages publish .next
+```
+
+### Automatic Deployment
+
+The project includes GitHub Actions for automatic deployment. Set up the following secrets in your repository:
+- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Pages:Edit permissions
+- `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
+
+### Environment Variables
+
+Production environment variables are pre-configured in `wrangler.toml`:
+- `NEXT_PUBLIC_AD_SERVER_URL`: https://lite-adserver.affset.com
+- `NEXT_PUBLIC_TIMEZONE`: UTC
+
+For custom deployments, you can override these in the Cloudflare Pages dashboard or modify the `wrangler.toml` file.
 
 ## Contributing
 

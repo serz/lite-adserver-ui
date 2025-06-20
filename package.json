@@ -5,10 +5,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:cf": "next build",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "deploy:cf": "wrangler pages publish .next"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
