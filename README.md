@@ -123,7 +123,7 @@ wrangler login
 3. Build and deploy:
 ```bash
 npm run build:cf
-wrangler pages publish .next
+npm run deploy:cf
 ```
 
 ### Automatic Deployment

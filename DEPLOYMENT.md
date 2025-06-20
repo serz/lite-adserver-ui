@@ -12,7 +12,7 @@ The following files have been configured for Cloudflare Pages deployment:
 - `.github/workflows/deploy.yml` - GitHub Actions for automatic deployment
 - `.gitignore` - Updated to exclude Cloudflare-specific files
 - `.cfignore` - Excludes cache files to prevent 25 MiB file size limit issues
-- `next.config.js` - Disabled webpack cache for production builds
+- `scripts/prepare-cf-deploy.js` - Prepares build output with correct file structure for Cloudflare Pages
 
 ## 🔧 Environment Variables
 
@@ -58,7 +58,7 @@ vars = {
 3. **Build and Deploy**
    ```bash
    npm run build:cf
-   wrangler pages publish .next
+   v
    ```
 
 ### Option 2: GitHub Actions (Recommended)

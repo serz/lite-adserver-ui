@@ -29,6 +29,7 @@ yarn-error.log*
 .dev.vars
 wrangler.toml.bak
 .cfignore
+cf-deploy/
 
 # typescript
 *.tsbuildinfo

@@ -37,5 +37,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: lite-adserver-ui
-          directory: .next
+          directory: cf-deploy
           gitHubToken: ${{ secrets.GITHUB_TOKEN }} 
