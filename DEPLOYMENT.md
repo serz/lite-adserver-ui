@@ -11,6 +11,8 @@ The following files have been configured for Cloudflare Pages deployment:
 - `package.json` - Updated build scripts for Cloudflare deployment
 - `.github/workflows/deploy.yml` - GitHub Actions for automatic deployment
 - `.gitignore` - Updated to exclude Cloudflare-specific files
+- `.cfignore` - Excludes cache files to prevent 25 MiB file size limit issues
+- `next.config.js` - Disabled webpack cache for production builds
 
 ## 🔧 Environment Variables
 

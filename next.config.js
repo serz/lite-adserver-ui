@@ -7,6 +7,14 @@ const nextConfig = {
   // Optimize for Cloudflare Pages
   generateBuildId: async () => {
     return 'cloudflare-pages-build'
+  },
+  // Disable webpack cache for Cloudflare Pages deployment
+  webpack: (config, { dev }) => {
+    if (!dev) {
+      // Disable cache in production builds for Cloudflare Pages
+      config.cache = false;
+    }
+    return config;
   }
 }
 

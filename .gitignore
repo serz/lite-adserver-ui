@@ -28,6 +28,7 @@ yarn-error.log*
 # cloudflare
 .dev.vars
 wrangler.toml.bak
+.cfignore
 
 # typescript
 *.tsbuildinfo
