@@ -4,12 +4,14 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:worker": "wrangler dev",
     "build": "next build",
     "build:cf": "next build && node scripts/prepare-cf-deploy.js",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
     "type-check": "tsc --noEmit",
+    "deploy": "wrangler deploy --env production",
     "deploy:cf": "wrangler pages deploy cf-deploy"
   },
   "dependencies": {

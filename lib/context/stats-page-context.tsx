@@ -21,6 +21,7 @@ interface StatsPageContextType {
   groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
   setGroupBy: (groupBy: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id') => void;
   refetch: (useCache?: boolean) => Promise<void>;
+  retryAfterNetworkError: () => void;
 }
 
 const StatsPageContext = createContext<StatsPageContextType | undefined>(undefined);
@@ -37,6 +38,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id'>('date');
   // Add a ref to track if we've already attempted to fetch data
   const dataFetchAttemptedRef = useRef(false);
+  const networkErrorRef = useRef(false);
   
   const fetchStats = useCallback(async (useCache: boolean = true) => {
     // Only fetch if auth is ready and user is authenticated
@@ -48,6 +50,12 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     if (!isAuthenticated || !apiInitialized) {
       setError('Authentication required. Please ensure you are logged in.');
       setIsLoading(false);
+      return;
+    }
+
+    // Don't retry if we've encountered a network error
+    if (networkErrorRef.current) {
+      console.log('Stats page context: Skipping fetch due to previous network error');
       return;
     }
 
@@ -67,13 +75,28 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
       
       setStats(response);
       dataFetchAttemptedRef.current = true;
+      // Reset network error flag on successful fetch
+      networkErrorRef.current = false;
     } catch (err) {
       console.error('Stats page context: Error fetching stats:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load stats');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load stats';
+      setError(errorMessage);
       
-      // Mark as attempted when we have auth errors to prevent retrying
-      if (err instanceof Error && (err.message.includes('Authentication required') || err.message.includes('API key is required'))) {
-        dataFetchAttemptedRef.current = true;
+      // Mark as attempted and set network error flag for certain types of errors
+      if (err instanceof Error) {
+        if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
+          dataFetchAttemptedRef.current = true;
+        } else if (err.message.includes('Network error:') || 
+                   err.message.includes('ERR_NAME_NOT_RESOLVED') || 
+                   err.message.includes('NetworkError') || 
+                   err.message.includes('Failed to fetch') ||
+                   err.message.includes('net::ERR_') ||
+                   err.message.includes('ERR_NETWORK')) {
+          // Network-related errors - stop retrying
+          console.log('Stats page context: Network error detected, stopping retries');
+          networkErrorRef.current = true;
+          dataFetchAttemptedRef.current = true;
+        }
       }
     } finally {
       setIsLoading(false);
@@ -85,6 +108,14 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     setDateRange(range);
   }, []);
 
+  // Manual retry function that resets network error flag
+  const retryAfterNetworkError = useCallback(() => {
+    console.log('Stats page context: Manually retrying after network error');
+    networkErrorRef.current = false;
+    dataFetchAttemptedRef.current = false;
+    fetchStats();
+  }, [fetchStats]);
+
   // Fetch stats when auth is ready and initialized
   useEffect(() => {
     // Only try to fetch if auth is ready
@@ -95,30 +126,22 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     // If authenticated and API initialized, fetch data
     if (isAuthenticated && apiInitialized) {
       // Only fetch if we haven't attempted before or if the filter criteria have changed
-      if (!dataFetchAttemptedRef.current) {
+      if (!dataFetchAttemptedRef.current && !networkErrorRef.current) {
         console.log('Stats page context: Initial data fetch');
         fetchStats();
       }
-    } else {
-      // If not authenticated, clear any previous error about authentication
-      if (error?.includes('Authentication required')) {
-        setError(null);
-      }
     }
-  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized, error]);
+  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized]);
 
   // Fetch stats when filter criteria change (but only if we're authenticated)
   useEffect(() => {
     if (isAuthReady && isAuthenticated && apiInitialized) {
-      if (dataFetchAttemptedRef.current) {
-        // Only refetch if we don't have an authentication error
-        if (!error?.includes('Authentication required') && !error?.includes('API key is required')) {
-          console.log('Stats page context: Refetching due to filter change');
-          fetchStats();
-        }
+      if (dataFetchAttemptedRef.current && !networkErrorRef.current) {
+        console.log('Stats page context: Refetching due to filter change');
+        fetchStats();
       }
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized, fetchStats, dateRange, campaignIds, zoneIds, groupBy, error]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, fetchStats, dateRange, campaignIds, zoneIds, groupBy]);
 
   return (
     <StatsPageContext.Provider
@@ -134,7 +157,8 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
         setZoneIds,
         groupBy,
         setGroupBy,
-        refetch: fetchStats
+        refetch: fetchStats,
+        retryAfterNetworkError
       }}
     >
       {children}

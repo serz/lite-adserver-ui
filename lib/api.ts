@@ -8,8 +8,29 @@ interface ApiError {
   error: string;
 }
 
+// Get the API URL from various sources (Next.js env, Cloudflare injected env, or fallback)
+const getApiUrl = (): string => {
+  // Try Next.js environment variable first (for dev server)
+  if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AD_SERVER_URL) {
+    return process.env.NEXT_PUBLIC_AD_SERVER_URL;
+  }
+  
+  // Try Cloudflare injected environment variables (for Workers)
+  if (typeof window !== 'undefined' && (window as any).__CLOUDFLARE_ENV__?.NEXT_PUBLIC_AD_SERVER_URL) {
+    return (window as any).__CLOUDFLARE_ENV__.NEXT_PUBLIC_AD_SERVER_URL;
+  }
+  
+  // Try window global (if available)
+  if (typeof window !== 'undefined' && (window as any).__NEXT_DATA__?.env?.NEXT_PUBLIC_AD_SERVER_URL) {
+    return (window as any).__NEXT_DATA__.env.NEXT_PUBLIC_AD_SERVER_URL;
+  }
+  
+  // Fallback to the production URL
+  return 'https://lite-adserver.affset.com';
+};
+
 const DEFAULT_API_OPTIONS: ApiOptions = {
-  baseUrl: process.env.NEXT_PUBLIC_AD_SERVER_URL || 'https://api.liteadserver.example.com',
+  baseUrl: getApiUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -160,6 +181,18 @@ export class ApiClient {
       return textData as unknown as T;
     } catch (error) {
       console.error(`API client: Error during request to ${endpoint}:`, error);
+      
+      // Handle network-specific errors with more descriptive messages
+      if (error instanceof Error) {
+        if (error.message.includes('ERR_NAME_NOT_RESOLVED')) {
+          throw new Error(`Network error: Unable to resolve server address. Please check your internet connection and server configuration.`);
+        } else if (error.message.includes('ERR_NETWORK') || error.message.includes('NetworkError')) {
+          throw new Error(`Network error: Unable to connect to server. Please check your internet connection.`);
+        } else if (error.message.includes('Failed to fetch')) {
+          throw new Error(`Network error: Failed to connect to server. Please check if the server is accessible.`);
+        }
+      }
+      
       throw error;
     }
   }
@@ -182,8 +215,8 @@ export class ApiClient {
   }
 }
 
-// Create a default instance with only the base URL from environment
+// Create a default instance with dynamic base URL resolution
 export const api = new ApiClient({
-  baseUrl: process.env.NEXT_PUBLIC_AD_SERVER_URL,
+  baseUrl: getApiUrl(),
   // No default API key - will be set after login
 }); 

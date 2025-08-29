@@ -25,6 +25,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
   const dataFetchedRef = useRef(false);
+  const networkErrorRef = useRef(false);
 
   const fetchStats = useCallback(async () => {
     if (!isAuthReady || !isAuthenticated || !apiInitialized) {
@@ -34,6 +35,12 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     
     if (dataFetchedRef.current) {
       console.log('Stats context: Data already fetched, skipping');
+      return;
+    }
+
+    // Don't retry if we've encountered a network error
+    if (networkErrorRef.current) {
+      console.log('Stats context: Skipping fetch due to previous network error');
       return;
     }
     
@@ -58,6 +65,8 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       setZonesCount(syncState.zones.count);
       
       dataFetchedRef.current = true;
+      // Reset network error flag on successful fetch
+      networkErrorRef.current = false;
     } catch (err) {
       console.error('Stats context: Error fetching stats:', err);
       let errorMessage = 'Failed to load statistics data';
@@ -67,6 +76,17 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
         } else if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
           errorMessage = err.message;
           dataFetchedRef.current = true;
+        } else if (err.message.includes('Network error:') || 
+                   err.message.includes('ERR_NAME_NOT_RESOLVED') || 
+                   err.message.includes('NetworkError') || 
+                   err.message.includes('Failed to fetch') ||
+                   err.message.includes('net::ERR_') ||
+                   err.message.includes('ERR_NETWORK')) {
+          // Network-related errors - stop retrying
+          console.log('Stats context: Network error detected, stopping retries');
+          networkErrorRef.current = true;
+          dataFetchedRef.current = true;
+          errorMessage = err.message;
         }
       }
       setError(errorMessage);
@@ -83,6 +103,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
 
   const refetchStats = useCallback(async () => {
     dataFetchedRef.current = false;
+    networkErrorRef.current = false;
     await fetchStats();
   }, [fetchStats]);
 

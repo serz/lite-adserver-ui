@@ -31,6 +31,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
   // Use a ref to track if we've already fetched data to prevent duplicate fetches
   const dataFetchedRef = useRef(false);
+  const networkErrorRef = useRef(false);
 
   const fetchZoneData = useCallback(async () => {
     // Don't continue if auth isn't ready or user isn't authenticated
@@ -42,6 +43,12 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     // If we've already fetched data, don't fetch again
     if (dataFetchedRef.current) {
       console.log('Zone context: Data already fetched, skipping');
+      return;
+    }
+
+    // Don't retry if we've encountered a network error
+    if (networkErrorRef.current) {
+      console.log('Zone context: Skipping fetch due to previous network error');
       return;
     }
     
@@ -61,9 +68,32 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       // Mark that we've successfully fetched data
       dataFetchedRef.current = true;
+      // Reset network error flag on successful fetch
+      networkErrorRef.current = false;
     } catch (err) {
       console.error('Zone context: Error fetching zone data:', err);
-      setError('Failed to load zone data');
+      let errorMessage = 'Failed to load zone data';
+      
+      // Handle network errors
+      if (err instanceof Error) {
+        if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
+          dataFetchedRef.current = true;
+          errorMessage = err.message;
+        } else if (err.message.includes('Network error:') || 
+                   err.message.includes('ERR_NAME_NOT_RESOLVED') || 
+                   err.message.includes('NetworkError') || 
+                   err.message.includes('Failed to fetch') ||
+                   err.message.includes('net::ERR_') ||
+                   err.message.includes('ERR_NETWORK')) {
+          // Network-related errors - stop retrying
+          console.log('Zone context: Network error detected, stopping retries');
+          networkErrorRef.current = true;
+          dataFetchedRef.current = true;
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +111,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   const refetchZones = useCallback(async () => {
     // Reset the fetched flag to force a new fetch
     dataFetchedRef.current = false;
+    networkErrorRef.current = false;
     await fetchZoneData();
   }, [fetchZoneData]);
 

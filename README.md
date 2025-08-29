@@ -106,7 +106,7 @@ yarn test
 
 ## Deployment
 
-This project is configured for deployment on Cloudflare Pages with automatic GitHub integration.
+This project is configured for deployment on **Cloudflare Workers with Static Assets** (migrated from Cloudflare Pages).
 
 ### Manual Deployment
 
@@ -123,14 +123,30 @@ wrangler login
 3. Build and deploy:
 ```bash
 npm run build:cf
+npm run deploy
+```
+
+### Legacy Pages Deployment (Still Supported)
+
+You can still deploy to Cloudflare Pages if needed:
+```bash
+npm run build:cf
 npm run deploy:cf
 ```
 
 ### Automatic Deployment
 
 The project includes GitHub Actions for automatic deployment. Set up the following secrets in your repository:
-- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Pages:Edit permissions
+- `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Workers:Edit permissions
 - `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
+
+### Development with Workers
+
+To test the production Worker behavior locally:
+```bash
+npm run build:cf
+npm run dev:worker
+```
 
 ### Environment Variables
 
