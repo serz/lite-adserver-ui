@@ -9,7 +9,7 @@ interface ApiError {
 }
 
 // Get the API URL from various sources (Next.js env, Cloudflare injected env, or fallback)
-const getApiUrl = (): string => {
+export const getApiUrl = (): string => {
   // Try Next.js environment variable first (for dev server)
   if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AD_SERVER_URL) {
     return process.env.NEXT_PUBLIC_AD_SERVER_URL;

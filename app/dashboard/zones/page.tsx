@@ -4,6 +4,7 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import DashboardLayout from '@/components/dashboard-layout';
 import { getZones, updateZone } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
+import { getApiUrl } from '@/lib/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { ZoneDialog } from '@/components/zone-dialog';
@@ -190,7 +191,7 @@ function ZonesContent() {
 
   // Get the serve URL for a zone
   const getServeUrl = (zoneId: number) => {
-    return `${process.env.NEXT_PUBLIC_AD_SERVER_URL}/serve/${zoneId}`;
+    return `${getApiUrl()}/serve/${zoneId}`;
   };
 
   // Handle copy to clipboard
