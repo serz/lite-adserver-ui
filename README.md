@@ -434,15 +434,9 @@ Automatic deployment on push to `main` branch:
    - `CLOUDFLARE_API_TOKEN` - Cloudflare API token with Workers:Edit permissions
    - `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
 
-2. Push to main branch - deployment is automatic
+2. Push to main branch - deployment is automatic to `lite-adserver-ui-production`
 
-### Cloudflare Pages (Legacy)
-
-Still supported for backward compatibility:
-```bash
-npm run build:cf
-npm run deploy:cf
-```
+> **Note**: Pull requests trigger the build job only (tests + build verification). Deployment only runs on pushes to `main`.
 
 ## Development
 

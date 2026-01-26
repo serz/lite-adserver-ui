@@ -1,6 +1,6 @@
-# Cloudflare Pages Deployment Guide
+# Cloudflare Workers Deployment Guide
 
-This guide covers the migration from Vercel to Cloudflare Pages for the Lite Adserver UI.
+This guide covers the deployment to Cloudflare Workers with Static Assets for the Lite Adserver UI.
 
 ## ✅ Migration Complete
 
@@ -64,28 +64,30 @@ vars = {
 ### Option 2: GitHub Actions (Recommended)
 
 1. **Set up GitHub Secrets**
-   - `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Pages:Edit permissions
+   - `CLOUDFLARE_API_TOKEN` - Your Cloudflare API token with Workers:Edit permissions
    - `CLOUDFLARE_ACCOUNT_ID` - Your Cloudflare account ID
 
 2. **Push to main branch**
    ```bash
    git add .
-   git commit -m "Migrate to Cloudflare Pages"
+   git commit -m "Deploy to Cloudflare Workers"
    git push origin main
    ```
 
 3. **Monitor deployment**
    - Check GitHub Actions tab for deployment status
-   - Check Cloudflare Pages dashboard for live URL
+   - The Worker is deployed as `lite-adserver-ui-production`
+   - Check Cloudflare Workers dashboard for live URL
 
 ## 🎯 Getting Your Cloudflare Credentials
 
 ### API Token
 1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
 2. Click "Create Token"
-3. Use "Custom token" template
-4. Set permissions: Zone:Zone:Read, Zone:Page Rules:Edit, Account:Cloudflare Pages:Edit
-5. Copy the token and add to GitHub secrets
+3. Use "Edit Cloudflare Workers" template, or create a custom token with:
+   - Account: Cloudflare Workers Scripts:Edit
+   - Account: Account Settings:Read
+4. Copy the token and add to GitHub secrets as `CLOUDFLARE_API_TOKEN`
 
 ### Account ID
 1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/)
