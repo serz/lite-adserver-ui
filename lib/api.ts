@@ -36,9 +36,70 @@ const DEFAULT_API_OPTIONS: ApiOptions = {
   },
 };
 
-const namespace = typeof window !== 'undefined'
-  ? window.location.hostname.split('.')[0]
-  : '';
+/**
+ * Securely extract and validate namespace from the current domain.
+ * Extracts the subdomain (first part before the first dot) and validates it.
+ * 
+ * @returns The validated namespace string, or empty string if invalid/not available
+ */
+function getNamespace(): string {
+  // Only run in browser environment
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  try {
+    const hostname = window.location.hostname;
+    
+    // Handle edge cases
+    if (!hostname || hostname.length === 0) {
+      return '';
+    }
+
+    // Skip for localhost, IP addresses, or domains without subdomain
+    // IP addresses contain only digits and dots
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+      // IP address - no namespace
+      return '';
+    }
+
+    // Check if it's localhost or similar
+    if (hostname === 'localhost' || hostname.startsWith('localhost.')) {
+      return '';
+    }
+
+    // Extract subdomain (first part before first dot)
+    const parts = hostname.split('.');
+    if (parts.length < 2) {
+      // No subdomain (e.g., just "example.com")
+      return '';
+    }
+
+    const subdomain = parts[0];
+    
+    // Validate namespace: alphanumeric, hyphens, underscores only
+    // Length: 1-63 characters (DNS label limit)
+    // Must start and end with alphanumeric character
+    const namespacePattern = /^[a-z0-9]([a-z0-9_-]{0,61}[a-z0-9])?$/i;
+    
+    if (!namespacePattern.test(subdomain)) {
+      console.warn(`API client: Invalid namespace format from hostname "${hostname}": "${subdomain}"`);
+      return '';
+    }
+
+    // Additional security: prevent header injection
+    // Check for newlines, carriage returns, or other control characters
+    if (/[\r\n]/.test(subdomain)) {
+      console.warn('API client: Namespace contains invalid characters (header injection attempt?)');
+      return '';
+    }
+
+    return subdomain;
+  } catch (error) {
+    console.error('API client: Error extracting namespace:', error);
+    return '';
+  }
+}
 
 export class ApiClient {
   private baseUrl: string;
@@ -53,7 +114,7 @@ export class ApiClient {
 
     if (options.apiKey) {
       this.headers['Authorization'] = `Bearer ${options.apiKey}`;
-      this.headers['x-namespace'] = namespace;
+      // Namespace will be computed dynamically on each request
     }
   }
 
@@ -62,7 +123,7 @@ export class ApiClient {
    */
   updateApiKey(apiKey: string): void {
     this.headers['Authorization'] = `Bearer ${apiKey}`;
-    this.headers['x-namespace'] = namespace;
+    // Namespace will be computed dynamically on each request
   }
 
   /**
@@ -128,10 +189,23 @@ export class ApiClient {
       throw new Error('API key is required. Please log in first.');
     }
 
+    // Compute namespace dynamically on each request for security and accuracy
+    const namespace = getNamespace();
+    
+    // Build headers with dynamically computed namespace
+    const requestHeaders: Record<string, string> = {
+      ...this.headers,
+    };
+    
+    // Only add namespace header if we have a valid namespace
+    if (namespace) {
+      requestHeaders['x-namespace'] = namespace;
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
     const options: RequestInit = {
       method,
-      headers: this.headers,
+      headers: requestHeaders,
     };
 
     if (data) {
@@ -140,7 +214,7 @@ export class ApiClient {
       options.body = JSON.stringify(processedData);
     }
 
-    console.log(`API client: Making ${method} request to ${endpoint}`, { url, headers: { ...this.headers, Authorization: '[REDACTED]' } });
+    console.log(`API client: Making ${method} request to ${endpoint}`, { url, headers: { ...requestHeaders, Authorization: '[REDACTED]' } });
     
     try {
       const response = await fetch(url, options);
