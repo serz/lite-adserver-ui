@@ -1,3 +1,5 @@
+# Base worker name (used for local development only - DO NOT DEPLOY)
+# Always use --env production when deploying
 name = "lite-adserver-ui"
 compatibility_date = "2024-01-01"
 main = "worker.js"
@@ -12,7 +14,10 @@ binding = "ASSETS"
 NEXT_PUBLIC_AD_SERVER_URL = "http://localhost:8787"
 NEXT_PUBLIC_TIMEZONE = "UTC"
 
+# Production environment - this is the only worker that should be deployed
+# Deploys as: lite-adserver-ui-production
 [env.production]
+name = "lite-adserver-ui-production"
 vars = { NODE_ENV = "production", NEXT_PUBLIC_AD_SERVER_URL = "https://lite-adserver.affset.com", NEXT_PUBLIC_TIMEZONE = "UTC" }
 
 [env.preview]

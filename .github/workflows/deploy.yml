@@ -49,6 +49,8 @@ jobs:
         run: npm run build:cf
 
       - name: Deploy to Cloudflare Workers
+        # Deploy to production environment only (lite-adserver-ui-production)
+        # The base worker (lite-adserver-ui) should never be deployed
         run: npx wrangler deploy --env production
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
