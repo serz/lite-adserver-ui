@@ -39,10 +39,10 @@ const DEFAULT_API_OPTIONS: ApiOptions = {
 /**
  * Securely extract and validate namespace from the current domain.
  * Extracts the subdomain (first part before the first dot) and validates it.
- * 
+ *
  * @returns The validated namespace string, or empty string if invalid/not available
  */
-function getNamespace(): string {
+export function getNamespace(): string {
   // Only run in browser environment
   if (typeof window === 'undefined') {
     return '';
@@ -99,6 +99,15 @@ function getNamespace(): string {
     console.error('API client: Error extracting namespace:', error);
     return '';
   }
+}
+
+/**
+ * Tenant display name for UI: namespace with first letter uppercase, or "Lite Adserver" when no namespace (e.g. localhost).
+ */
+export function getTenantDisplayName(): string {
+  const ns = getNamespace();
+  if (!ns) return 'Lite Adserver';
+  return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
 }
 
 export class ApiClient {

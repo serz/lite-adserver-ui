@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TimezoneToggle } from "@/components/timezone-toggle";
 import { useAuth } from "@/components/auth-provider";
+import { useTenantDisplayName } from "@/lib/use-tenant-display-name";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const { logout } = useAuth();
+  const tenantName = useTenantDisplayName();
   
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -54,7 +56,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center">
-            <span className="text-xl font-bold">Lite Adserver</span>
+            <span className="text-xl font-bold">{tenantName}</span>
           </div>
           <Button
             variant="ghost"

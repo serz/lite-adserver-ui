@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth-provider";
 import { isLoggedIn } from "@/lib/auth";
+import { useTenantDisplayName } from "@/lib/use-tenant-display-name";
 
 export default function LoginPage() {
   const [apiKey, setApiKey] = useState("");
@@ -14,6 +15,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const { login } = useAuth();
+  const tenantName = useTenantDisplayName();
 
   // If already logged in, redirect to dashboard
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-24">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold">Lite Adserver</h1>
+          <h1 className="text-3xl font-bold">{tenantName}</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access your dashboard
           </p>
