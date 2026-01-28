@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "@/components/ui/toaster";
+import { getTenantDisplayNameFromHost } from "@/lib/api";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
-export const metadata: Metadata = {
-  title: "Lite Adserver Dashboard",
-  description: "Dashboard for managing Lite Adserver campaigns, zones and statistics",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const tenantName = getTenantDisplayNameFromHost(host);
+  const title = tenantName ? `${tenantName} Dashboard` : "Lite Adserver Dashboard";
+  return {
+    title,
+    description: "Dashboard for managing campaigns, zones and statistics",
+  };
+}
 
 export default function RootLayout({
   children,

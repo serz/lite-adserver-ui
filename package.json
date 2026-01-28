@@ -11,7 +11,7 @@
     "lint": "next lint",
     "test": "jest",
     "type-check": "tsc --noEmit",
-    "deploy": "wrangler deploy --env production",
+    "deploy": "npm run build:cf && wrangler deploy --env production",
     "deploy:cf": "wrangler pages deploy cf-deploy"
   },
   "dependencies": {

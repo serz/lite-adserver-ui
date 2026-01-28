@@ -37,68 +37,38 @@ const DEFAULT_API_OPTIONS: ApiOptions = {
 };
 
 /**
+ * Extract and validate namespace from a hostname string (works in browser and server).
+ * Use getNamespace() in browser; use getNamespaceFromHostname(host) on server with request host.
+ */
+function getNamespaceFromHostname(hostname: string): string {
+  try {
+    if (!hostname || hostname.length === 0) return '';
+
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return '';
+    if (hostname === 'localhost' || hostname.startsWith('localhost.')) return '';
+
+    const parts = hostname.split('.');
+    if (parts.length < 2) return '';
+
+    const subdomain = parts[0];
+    const namespacePattern = /^[a-z0-9]([a-z0-9_-]{0,61}[a-z0-9])?$/i;
+    if (!namespacePattern.test(subdomain) || /[\r\n]/.test(subdomain)) return '';
+
+    return subdomain;
+  } catch {
+    return '';
+  }
+}
+
+/**
  * Securely extract and validate namespace from the current domain.
  * Extracts the subdomain (first part before the first dot) and validates it.
  *
  * @returns The validated namespace string, or empty string if invalid/not available
  */
 export function getNamespace(): string {
-  // Only run in browser environment
-  if (typeof window === 'undefined') {
-    return '';
-  }
-
-  try {
-    const hostname = window.location.hostname;
-    
-    // Handle edge cases
-    if (!hostname || hostname.length === 0) {
-      return '';
-    }
-
-    // Skip for localhost, IP addresses, or domains without subdomain
-    // IP addresses contain only digits and dots
-    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
-      // IP address - no namespace
-      return '';
-    }
-
-    // Check if it's localhost or similar
-    if (hostname === 'localhost' || hostname.startsWith('localhost.')) {
-      return '';
-    }
-
-    // Extract subdomain (first part before first dot)
-    const parts = hostname.split('.');
-    if (parts.length < 2) {
-      // No subdomain (e.g., just "example.com")
-      return '';
-    }
-
-    const subdomain = parts[0];
-    
-    // Validate namespace: alphanumeric, hyphens, underscores only
-    // Length: 1-63 characters (DNS label limit)
-    // Must start and end with alphanumeric character
-    const namespacePattern = /^[a-z0-9]([a-z0-9_-]{0,61}[a-z0-9])?$/i;
-    
-    if (!namespacePattern.test(subdomain)) {
-      console.warn(`API client: Invalid namespace format from hostname "${hostname}": "${subdomain}"`);
-      return '';
-    }
-
-    // Additional security: prevent header injection
-    // Check for newlines, carriage returns, or other control characters
-    if (/[\r\n]/.test(subdomain)) {
-      console.warn('API client: Namespace contains invalid characters (header injection attempt?)');
-      return '';
-    }
-
-    return subdomain;
-  } catch (error) {
-    console.error('API client: Error extracting namespace:', error);
-    return '';
-  }
+  if (typeof window === 'undefined') return '';
+  return getNamespaceFromHostname(window.location.hostname);
 }
 
 /**
@@ -106,6 +76,18 @@ export function getNamespace(): string {
  */
 export function getTenantDisplayName(): string {
   const ns = getNamespace();
+  if (!ns) return 'Lite Adserver';
+  return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
+}
+
+/**
+ * Tenant display name from request host (for server-side use, e.g. metadata).
+ * @param host - Host header value (e.g. "brand.example.com" or "brand.example.com:3000")
+ */
+export function getTenantDisplayNameFromHost(host: string | null): string {
+  if (!host) return 'Lite Adserver';
+  const hostname = host.split(':')[0];
+  const ns = getNamespaceFromHostname(hostname);
   if (!ns) return 'Lite Adserver';
   return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
 }
