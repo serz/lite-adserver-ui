@@ -98,7 +98,7 @@ vars = {
 ## 🔍 Verifying the Deployment
 
 1. **Build Success**: Check that `npm run build:cf` completes without errors
-2. **Environment Variables**: Verify that the app connects to `https://lite-adserver.affset.com`
+2. **Environment Variables**: Verify that the app connects to `https://api.affset.com`
 3. **Routing**: Test all pages including dynamic routes like `/dashboard/campaigns/edit/[id]`
 4. **Authentication**: Verify API key authentication works correctly
 5. **Local Development**: Test with `wrangler pages dev .next` (after building)

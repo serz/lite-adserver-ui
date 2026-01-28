@@ -353,7 +353,7 @@ The dashboard communicates with the Lite Adserver backend API. See the [API docu
 
 ### Backend Connection
 
-By default, the UI connects to `https://lite-adserver.affset.com`. For local development, configure `NEXT_PUBLIC_AD_SERVER_URL` in `wrangler.toml` to point to your local backend instance.
+By default, the UI connects to `https://api.affset.com`. For local development, configure `NEXT_PUBLIC_AD_SERVER_URL` in `wrangler.toml` to point to your local backend instance.
 
 ## Authentication
 
