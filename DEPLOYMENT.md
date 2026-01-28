@@ -21,14 +21,14 @@ Environment variables are centrally managed in `wrangler.toml`:
 ```toml
 # Used for local development (wrangler pages dev)
 [vars]
-NEXT_PUBLIC_AD_SERVER_URL = "https://lite-adserver.affset.com"
+NEXT_PUBLIC_AD_SERVER_URL = "https://api.affset.com"
 NEXT_PUBLIC_TIMEZONE = "UTC"
 
 # Production deployment overrides
 [env.production]
 vars = { 
   NODE_ENV = "production",
-  NEXT_PUBLIC_AD_SERVER_URL = "https://lite-adserver.affset.com",
+  NEXT_PUBLIC_AD_SERVER_URL = "https://api.affset.com",
   NEXT_PUBLIC_TIMEZONE = "UTC"
 }
 
@@ -36,7 +36,7 @@ vars = {
 [env.preview]
 vars = { 
   NODE_ENV = "development",
-  NEXT_PUBLIC_AD_SERVER_URL = "https://lite-adserver.affset.com",
+  NEXT_PUBLIC_AD_SERVER_URL = "https://api.affset.com",
   NEXT_PUBLIC_TIMEZONE = "UTC"
 }
 ```

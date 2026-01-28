@@ -86,7 +86,7 @@ Lite Adserver Dashboard is the frontend interface for managing ad campaigns, zon
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Lite Adserver Backend                         │
 │              (Cloudflare Workers + D1 + KV)                      │
-│                  lite-adserver.affset.com                        │
+│                  api.affset.com                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

@@ -26,7 +26,7 @@ export const getApiUrl = (): string => {
   }
   
   // Fallback to the production URL
-  return 'https://lite-adserver.affset.com';
+  return 'https://api.affset.com';
 };
 
 const DEFAULT_API_OPTIONS: ApiOptions = {
