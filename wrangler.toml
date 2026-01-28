@@ -9,6 +9,11 @@ main = "worker.js"
 directory = "cf-deploy"
 binding = "ASSETS"
 
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # Default vars (used for local development and inherited by environments)
 [vars]
 NEXT_PUBLIC_AD_SERVER_URL = "http://localhost:8787"
