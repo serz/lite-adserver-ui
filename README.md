@@ -14,6 +14,7 @@ A modern, responsive dashboard UI for managing the [Lite Adserver platform](http
 - [API Integration](#api-integration)
 - [Authentication](#authentication)
 - [State Management](#state-management)
+- [Design](#design)
 - [Deployment](#deployment)
 - [Development](#development)
 - [Testing](#testing)
@@ -403,6 +404,10 @@ Campaign list and operations state.
 
 ### ZoneContext
 Zone list and operations state.
+
+## Design
+
+Primary palette and UI tokens are documented in [docs/DESIGN.md](docs/DESIGN.md): **Electric violet** primary (`#7C3AED`), hover (`#6D28D9`), and subtle violet glow. Use `bg-primary`, `hover:bg-primary-hover`, and `shadow-glow-primary` in components.
 
 ## Deployment
 

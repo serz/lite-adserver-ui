@@ -245,8 +245,16 @@ function CampaignsContent() {
           ))}
         </div>
       ) : campaigns.length === 0 ? (
-        <div className="rounded-md border bg-card p-6 text-center">
-          <p className="text-muted-foreground">No campaigns found</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-12 px-6 text-center">
+          <p className="text-lg font-medium text-foreground mb-1">No campaigns yet.</p>
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            Create your first campaign to start serving ads.
+          </p>
+          <Link href="/dashboard/campaigns/create">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+              Create Campaign
+            </Button>
+          </Link>
         </div>
       ) : (
         <div className="overflow-hidden rounded-md border bg-card">

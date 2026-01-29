@@ -6,12 +6,14 @@ import { RecentActivity } from '@/components/recent-activity';
 import { WithAuthGuard } from '@/components/with-auth-guard';
 import { DemoInstanceWarning } from '@/components/demo-instance-warning';
 import { HelpCircle } from 'lucide-react';
+import Link from 'next/link';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
   return (
@@ -55,6 +57,25 @@ function DashboardContent() {
       <div className="mb-6">
         <DemoInstanceWarning />
       </div>
+
+      {!statsLoading && !statsError && campaignsCount === 0 && zonesCount === 0 && (
+        <div className="mb-6 flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-8 px-6 text-center">
+          <p className="text-lg font-medium text-foreground mb-1">Get started</p>
+          <p className="text-muted-foreground mb-4 max-w-sm">
+            Create your first campaign and add zones to start serving ads.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link href="/dashboard/campaigns/create">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+                Create Campaign
+              </Button>
+            </Link>
+            <Link href="/dashboard/zones">
+              <Button variant="outline">Manage Zones</Button>
+            </Link>
+          </div>
+        </div>
+      )}
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Campaign Stats Card */}

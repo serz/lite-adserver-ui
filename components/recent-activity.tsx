@@ -7,6 +7,7 @@ import { useZones } from '@/lib/context/zone-context';
 import { Campaign, Zone } from '@/types/api';
 import { Layers, Users } from 'lucide-react';
 import { Badge, BadgeProps } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/date-utils';
 
 type ActivityItem = {
@@ -86,7 +87,19 @@ export function RecentActivity() {
   }
 
   if (activityItems.length === 0) {
-    return <p className="text-muted-foreground">No recent activity to display</p>;
+    return (
+      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-10 px-6 text-center">
+        <p className="text-muted-foreground mb-1">No recent activity yet.</p>
+        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+          Create your first campaign or add a zone to see activity here.
+        </p>
+        <Link href="/dashboard/campaigns/create">
+          <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+            Create Campaign
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   return (

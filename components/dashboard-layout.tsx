@@ -48,9 +48,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — glass blur, active pill (primary 15%), tight icon+text alignment */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card transition-transform duration-200 ease-in-out md:relative md:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform border-r border-border/50 bg-card/80 backdrop-blur-md transition-transform duration-200 ease-in-out md:relative md:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -67,21 +67,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <X className="h-5 w-5" />
           </Button>
         </div>
-        <nav className="space-y-1 px-2 py-4">
+        <nav className="space-y-0.5 px-2 py-4">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             return (
               <Link
                 key={item.name}
                 href={item.href}
-                className={`flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2.5 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-primary/15 text-primary"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
-                <item.icon className="mr-3 h-5 w-5" />
-                {item.name}
+                <item.icon className="h-[1.125rem] w-[1.125rem] shrink-0" />
+                <span>{item.name}</span>
               </Link>
             );
           })}

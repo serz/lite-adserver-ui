@@ -237,7 +237,7 @@ function ZonesContent() {
           </Button>
         </div>
         <ZoneDialog 
-          triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90" 
+          triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow" 
           onZoneCreated={() => fetchZones(true)}
         />
       </div>
@@ -263,8 +263,19 @@ function ZonesContent() {
           ))}
         </div>
       ) : zones.length === 0 ? (
-        <div className="rounded-md border bg-card p-6 text-center">
-          <p className="text-muted-foreground">No zones found</p>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-12 px-6 text-center">
+          <p className="text-lg font-medium text-foreground mb-1">No zones yet.</p>
+          <p className="text-muted-foreground mb-6 max-w-sm">
+            Add your first zone to define where ads can be displayed.
+          </p>
+          <ZoneDialog
+            triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow"
+            onZoneCreated={() => fetchZones(true)}
+          >
+            <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+              Add Zone
+            </Button>
+          </ZoneDialog>
         </div>
       ) : (
         <>
