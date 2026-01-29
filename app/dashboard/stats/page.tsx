@@ -3,6 +3,7 @@
 import DashboardLayout from '@/components/dashboard-layout';
 import { StatsTable } from '@/components/stats-table';
 import { useStatsPage } from '@/lib/context/stats-page-context';
+import { useStats } from '@/lib/context/stats-context';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -53,6 +54,7 @@ function StatsContent() {
     setGroupBy,
     refetch
   } = useStatsPage();
+  const { zonesCount } = useStats();
 
   // Handle date range change
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
@@ -136,7 +138,7 @@ function StatsContent() {
             </div>
           </div>
         ) : (
-          <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} />
+          <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} />
         )}
       </div>
     </div>
