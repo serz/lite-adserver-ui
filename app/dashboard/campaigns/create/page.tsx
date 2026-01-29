@@ -519,35 +519,35 @@ function CampaignForm() {
               {/* First row - Device Type and Unique Users */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Device Type Targeting */}
-                <div className="space-y-4">
+                <div className="space-y-4 min-w-0">
                   <div className="flex flex-col space-y-2">
                     <Label htmlFor="device-type">Device Type</Label>
-                    <div className="flex flex-wrap gap-4 items-center">
+                    <div className="min-w-0 overflow-x-auto md:overflow-visible">
                       <ToggleGroup 
                         type="multiple" 
                         value={selectedDevices}
                         onValueChange={setSelectedDevices}
-                        className="justify-start"
+                        className="justify-start flex-wrap gap-2 md:gap-4"
                       >
-                        <ToggleGroupItem value="desktop" aria-label="Desktop" disabled={isLoading}>
-                          <MonitorIcon className="h-4 w-4 mr-1" />
-                          Desktop
-                          <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("desktop") ? "bg-green-500" : "bg-red-500"}`}></span>
+                        <ToggleGroupItem value="desktop" aria-label="Desktop" disabled={isLoading} className="flex-shrink-0">
+                          <MonitorIcon className="h-4 w-4 md:mr-1" />
+                          <span className="hidden md:inline">Desktop</span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("desktop") ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="mobile" aria-label="Mobile" disabled={isLoading}>
-                          <SmartphoneIcon className="h-4 w-4 mr-1" />
-                          Mobile
-                          <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("mobile") ? "bg-green-500" : "bg-red-500"}`}></span>
+                        <ToggleGroupItem value="mobile" aria-label="Mobile" disabled={isLoading} className="flex-shrink-0">
+                          <SmartphoneIcon className="h-4 w-4 md:mr-1" />
+                          <span className="hidden md:inline">Mobile</span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("mobile") ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="tablet" aria-label="Tablet" disabled={isLoading}>
-                          <TabletIcon className="h-4 w-4 mr-1" />
-                          Tablet
-                          <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
+                        <ToggleGroupItem value="tablet" aria-label="Tablet" disabled={isLoading} className="flex-shrink-0">
+                          <TabletIcon className="h-4 w-4 md:mr-1" />
+                          <span className="hidden md:inline">Tablet</span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
-                        <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading}>
-                          <Tv className="h-4 w-4 mr-1" />
-                          TV
-                          <span className={`ml-1 inline-block h-2 w-2 rounded-full ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
+                        <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading} className="flex-shrink-0">
+                          <Tv className="h-4 w-4 md:mr-1" />
+                          <span className="hidden md:inline">TV</span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -668,16 +668,17 @@ function CampaignForm() {
             </div>
           </div>
           
-          <div className="flex items-center justify-end space-x-4">
+          <div className="flex w-full gap-4">
             <Button 
               type="button" 
               variant="outline" 
+              className="flex-1 min-w-0"
               onClick={() => router.push("/dashboard/campaigns")}
               disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="flex-1 min-w-0" disabled={isLoading}>
               {isLoading ? "Creating..." : "Create Campaign"}
             </Button>
           </div>

@@ -279,8 +279,8 @@ function ZonesContent() {
         </div>
       ) : (
         <>
-          <div className="overflow-hidden rounded-md border bg-card">
-            <table className="w-full">
+          <div className="overflow-x-auto rounded-md border bg-card">
+            <table className="w-full min-w-[800px]">
               <thead>
                 <tr className="border-b">
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">ID</th>
