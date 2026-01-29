@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/date-utils';
 
 type ActivityItem = {
-  id: number;
+  id: number | string;
   name: string;
   type: 'campaign' | 'zone';
   created_at: number;
