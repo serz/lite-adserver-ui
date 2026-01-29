@@ -80,18 +80,6 @@ export function getTenantDisplayName(): string {
   return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
 }
 
-/**
- * Tenant display name from request host (for server-side use, e.g. metadata).
- * @param host - Host header value (e.g. "brand.example.com" or "brand.example.com:3000")
- */
-export function getTenantDisplayNameFromHost(host: string | null): string {
-  if (!host) return 'Lite Adserver';
-  const hostname = host.split(':')[0];
-  const ns = getNamespaceFromHostname(hostname);
-  if (!ns) return 'Lite Adserver';
-  return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
-}
-
 export class ApiClient {
   private baseUrl: string;
   private headers: Record<string, string>;
