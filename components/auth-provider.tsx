@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getApiKey, setApiKey, clearApiKey, isLoggedIn } from '@/lib/auth';
 import { api } from '@/lib/api';
@@ -55,12 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  // Redirect to login if not authenticated and not on login page
+  // Redirect to login if not authenticated and not on login page.
+  // Normalize pathname for trailingSlash (e.g. /login vs /login/) to avoid redirect loop.
+  const isLoginPage = pathname === '/login' || pathname === '/login/';
   useEffect(() => {
-    if (isAuthReady && !isAuthenticated && pathname !== '/login') {
+    if (isAuthReady && !isAuthenticated && !isLoginPage) {
       router.push('/login');
     }
-  }, [isAuthenticated, isAuthReady, pathname, router]);
+  }, [isAuthenticated, isAuthReady, isLoginPage, router]);
 
   const login = async (apiKey: string): Promise<void> => {
     // Store the API key
@@ -77,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/dashboard');
   };
 
-  const logout = (): void => {
+  const logout = useCallback((): void => {
     // Clear the API key
     clearApiKey();
     
@@ -87,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Redirect to login
     router.push('/login');
-  };
+  }, [router]);
 
   // Add a global error handler for API authentication errors
   useEffect(() => {
