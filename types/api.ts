@@ -30,9 +30,9 @@ export interface TargetingRule {
   rule: string;
 }
 
-// Zone types
+// Zone types (id may be number or UUID string depending on API)
 export interface Zone {
-  id: number;
+  id: number | string;
   name: string;
   site_url: string;
   traffic_back_url: string;

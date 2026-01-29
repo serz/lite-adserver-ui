@@ -125,40 +125,59 @@ export async function getActiveZonesCount(): Promise<number> {
 }
 
 /**
- * Create a new zone
+ * Create a new zone.
+ * API may return either { zone: Zone } or the zone object directly (e.g. { id, status, created_at } with id as UUID string).
  */
 export async function createZone(zoneData: {
   name: string;
   site_url?: string;
   traffic_back_url?: string;
 }): Promise<Zone> {
-  try {
-    const response = await api.post<{ zone: Zone }>('/api/zones', zoneData);
-    
-    // Invalidate all cache after creating a new zone
-    Object.keys(cache).forEach(key => {
-      delete cache[key as keyof ZoneCache];
-    });
-    
-    // Sync newly created zone to KV storage
-    try {
-      await syncZone(response.zone.id);
-    } catch (syncError) {
-      console.error(`Failed to sync new zone ${response.zone.id}:`, syncError);
-      // Don't rethrow, as the zone creation was successful
-    }
-    
-    return response.zone;
-  } catch (error) {
-    throw error;
+  const response = await api.post<{ zone?: Zone } & Partial<Zone>>('/api/zones', zoneData);
+  
+  // Normalize: API can return { zone: Zone } or the zone object directly
+  const raw = response && typeof response === 'object' && 'zone' in response && response.zone
+    ? response.zone
+    : response && typeof response === 'object' && 'id' in response
+      ? (response as Partial<Zone>)
+      : null;
+  
+  if (!raw || raw.id === undefined) {
+    throw new Error('Invalid create zone response: missing zone data');
   }
+  
+  const zone: Zone = {
+    id: raw.id,
+    name: raw.name ?? zoneData.name,
+    site_url: raw.site_url ?? zoneData.site_url ?? '',
+    traffic_back_url: raw.traffic_back_url ?? zoneData.traffic_back_url ?? '',
+    status: raw.status ?? 'active',
+    created_at: raw.created_at ?? Date.now(),
+    updated_at: raw.updated_at ?? raw.created_at ?? Date.now(),
+  };
+  
+  // Invalidate all cache after creating a new zone
+  Object.keys(cache).forEach(key => {
+    delete cache[key as keyof ZoneCache];
+  });
+  
+  // Sync newly created zone to KV storage (id may be number or UUID string)
+  try {
+    await syncZone(zone.id);
+  } catch (syncError) {
+    console.error(`Failed to sync new zone ${zone.id}:`, syncError);
+    // Don't rethrow, as the zone creation was successful
+  }
+  
+  return zone;
 }
 
 /**
  * Update an existing zone
+ * @param id - Zone ID (number or UUID string)
  */
 export async function updateZone(
-  id: number,
+  id: number | string,
   zoneData: {
     name?: string;
     site_url?: string;
@@ -192,8 +211,9 @@ export async function updateZone(
 
 /**
  * Get a specific zone by ID
+ * @param id - Zone ID (number or UUID string)
  */
-export async function getZone(id: number): Promise<Zone> {
+export async function getZone(id: number | string): Promise<Zone> {
   try {
     // Log the API call for debugging
     console.log(`Fetching zone with ID: ${id}`);

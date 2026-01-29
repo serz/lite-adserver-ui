@@ -17,8 +17,9 @@ export async function syncCampaign(campaignId: number): Promise<void> {
 /**
  * Sync a zone to KV storage
  * This function calls the adserver API to sync a zone from D1 to KV
+ * @param zoneId - Zone ID (number or UUID string)
  */
-export async function syncZone(zoneId: number): Promise<void> {
+export async function syncZone(zoneId: number | string): Promise<void> {
   try {
     await api.post<void>(`/api/sync/zones/${zoneId}`, {});
     console.log(`Synced zone ${zoneId} to KV storage`);

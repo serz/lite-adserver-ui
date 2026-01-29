@@ -26,7 +26,7 @@ interface ZoneDialogProps {
   onZoneCreated?: () => void;
   onZoneUpdated?: () => void;
   mode?: 'create' | 'edit';
-  zoneId?: number;
+  zoneId?: number | string;
 }
 
 export function ZoneDialog({ 

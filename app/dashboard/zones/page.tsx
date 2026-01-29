@@ -68,7 +68,7 @@ function ZonesContent() {
   // Add toast for notifications
   const { toast } = useToast();
   // Add state to track which code has been copied
-  const [copiedZoneId, setCopiedZoneId] = useState<number | null>(null);
+  const [copiedZoneId, setCopiedZoneId] = useState<number | string | null>(null);
 
   const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
     // Only set loading state if we're doing an initial fetch or a forced refetch
@@ -190,12 +190,12 @@ function ZonesContent() {
   };
 
   // Get the serve URL for a zone
-  const getServeUrl = (zoneId: number) => {
+  const getServeUrl = (zoneId: number | string) => {
     return `${getApiUrl()}/serve/${zoneId}`;
   };
 
   // Handle copy to clipboard
-  const handleCopyCode = (zoneId: number) => {
+  const handleCopyCode = (zoneId: number | string) => {
     const codeText = getServeUrl(zoneId);
     navigator.clipboard.writeText(codeText).then(() => {
       // Show success toast
