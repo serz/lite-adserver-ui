@@ -22,8 +22,8 @@ export default function DashboardPage() {
         loadingComponent={
           <div className="container mx-auto min-w-0 max-w-full p-6">
             <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {[...Array(4)].map((_, i) => (
+<div className="grid grid-cols-2 gap-6 lg:grid-cols-3">
+            {[...Array(4)].map((_, i) => (
                 <div key={i} className="rounded-lg border bg-card p-6 shadow-sm">
                   <div className="h-8 w-28 animate-pulse rounded bg-muted mb-2"></div>
                   <div className="h-10 w-16 animate-pulse rounded bg-muted"></div>
@@ -77,7 +77,7 @@ function DashboardContent() {
         </div>
       )}
       
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-2 gap-6 lg:grid-cols-3">
         {/* Campaign Stats Card */}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Campaigns</h3>
