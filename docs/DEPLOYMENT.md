@@ -127,24 +127,6 @@ vars = {
 - Update DNS records to point to Cloudflare Pages
 - Enable HTTPS redirect in Cloudflare dashboard
 
-## 🔄 Rollback Plan
-
-If needed, you can quickly rollback to Vercel:
-
-1. Remove Cloudflare-specific files:
-   ```bash
-   rm wrangler.toml
-   rm .github/workflows/deploy.yml
-   ```
-
-2. Restore Vercel configuration:
-   ```bash
-   # Remove output settings from next.config.js
-   # Restore .vercel directory if needed
-   ```
-
-3. Redeploy to Vercel platform
-
 ## 📞 Support
 
 For Cloudflare Pages specific issues:
