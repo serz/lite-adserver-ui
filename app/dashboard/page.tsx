@@ -20,8 +20,8 @@ export default function DashboardPage() {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
-            <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+          <div className="container mx-auto min-w-0 max-w-full p-6">
+            <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="rounded-lg border bg-card p-6 shadow-sm">
@@ -50,8 +50,8 @@ function DashboardContent() {
   } = useStats();
 
   return (
-    <div className="container mx-auto p-6">
-      <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+    <div className="container mx-auto min-w-0 max-w-full p-6">
+      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
       
       {/* Demo Instance Warning Widget */}
       <div className="mb-6">

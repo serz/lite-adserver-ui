@@ -20,6 +20,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Pagination,
   PaginationContent,
   PaginationEllipsis,
@@ -34,10 +40,10 @@ export default function ZonesPage() {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto min-w-0 max-w-full p-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">Zones</h1>
+                <h1 className="text-2xl font-bold md:text-3xl">Zones</h1>
               </div>
             </div>
             <div className="space-y-4">
@@ -194,6 +200,13 @@ function ZonesContent() {
     return `${getApiUrl()}/serve/${zoneId}`;
   };
 
+  // Shorten zone ID for display (first 2 + last 2 characters)
+  const getShortenedId = (id: number | string): string => {
+    const idStr = String(id);
+    if (idStr.length <= 6) return idStr; // Don't shorten if already short
+    return `${idStr.slice(0, 2)}...${idStr.slice(-2)}`;
+  };
+
   // Handle copy to clipboard
   const handleCopyCode = (zoneId: number | string) => {
     const codeText = getServeUrl(zoneId);
@@ -222,10 +235,10 @@ function ZonesContent() {
   };
 
   return (
-    <div className="container mx-auto min-w-0 p-6">
+    <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold">Zones</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Zones</h1>
           <Button
             variant="ghost"
             size="icon"
@@ -295,7 +308,18 @@ function ZonesContent() {
               <tbody>
                 {zones.map(zone => (
                   <tr key={zone.id} className="border-b last:border-0 hover:bg-muted/50">
-                    <td className="px-4 py-3 text-sm">{zone.id}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-help">{getShortenedId(zone.id)}</span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="font-mono text-xs">{zone.id}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
                     <td className="px-4 py-3 text-sm">{zone.name}</td>
                     <td className="px-4 py-3 text-sm">
                       <Badge 

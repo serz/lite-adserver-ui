@@ -25,9 +25,9 @@ export default function StatsPage() {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto min-w-0 max-w-full p-6">
             <div className="mb-6 flex items-center justify-between">
-              <h1 className="text-3xl font-bold">Statistics</h1>
+              <h1 className="text-2xl font-bold md:text-3xl">Statistics</h1>
             </div>
             <div className="space-y-4">
               {[...Array(3)].map((_, i) => (
@@ -73,9 +73,9 @@ function StatsContent() {
   }, [refetch]);
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Statistics</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Statistics</h1>
       </div>
 
       {/* Filters section */}

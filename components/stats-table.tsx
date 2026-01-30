@@ -99,7 +99,7 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTa
   };
   
   return (
-    <div className="rounded-md border">
+    <div className="min-w-0 overflow-x-auto rounded-md border [-webkit-overflow-scrolling:touch]">
       <Table>
         <TableHeader>
           <TableRow>

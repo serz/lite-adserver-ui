@@ -18,10 +18,10 @@ export default function CampaignsPage() {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto min-w-0 max-w-full p-6">
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h1 className="text-3xl font-bold">Campaigns</h1>
+                <h1 className="text-2xl font-bold md:text-3xl">Campaigns</h1>
               </div>
             </div>
             <div className="space-y-4">
@@ -203,10 +203,10 @@ function CampaignsContent() {
   };
 
   return (
-    <div className="container mx-auto min-w-0 p-6">
+    <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-3xl font-bold">Campaigns</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">Campaigns</h1>
           <Button
             variant="ghost"
             size="icon"

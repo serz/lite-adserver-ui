@@ -47,9 +47,9 @@ export default function EditCampaignPage({ params }: EditCampaignPageProps) {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto min-w-0 max-w-full p-6">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold">Edit Campaign</h1>
+              <h1 className="text-2xl font-bold md:text-3xl">Edit Campaign</h1>
             </div>
             <div className="h-20 animate-pulse rounded-md bg-muted"></div>
           </div>
@@ -620,9 +620,9 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
   };
   
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Edit Campaign</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Edit Campaign</h1>
         <p className="mt-2 text-muted-foreground">Update the campaign details</p>
       </div>
       

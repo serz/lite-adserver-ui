@@ -35,9 +35,9 @@ export default function CreateCampaignPage() {
     <DashboardLayout>
       <WithAuthGuard
         loadingComponent={
-          <div className="container mx-auto p-6">
+          <div className="container mx-auto min-w-0 max-w-full p-6">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold">Create Campaign</h1>
+              <h1 className="text-2xl font-bold md:text-3xl">Create Campaign</h1>
             </div>
             <div className="h-20 animate-pulse rounded-md bg-muted"></div>
           </div>
@@ -387,9 +387,9 @@ function CampaignForm() {
   };
   
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Create Campaign</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Create Campaign</h1>
         <p className="mt-2 text-muted-foreground">Fill in the details to create a new campaign</p>
       </div>
       
