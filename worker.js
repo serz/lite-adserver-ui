@@ -76,9 +76,19 @@ export default {
         }
 
         const fallbackRequest = new Request(new URL(fallbackPath, request.url), request);
-        const fallbackAsset = await env.ASSETS.fetch(fallbackRequest);
+        let fallbackAsset = await env.ASSETS.fetch(fallbackRequest);
 
-        if (fallbackAsset && fallbackAsset.status === 200) {
+        // Handle successful responses (200-299) and redirects (300-399)
+        if (fallbackAsset && (fallbackAsset.status >= 200 && fallbackAsset.status < 400)) {
+          // For redirects, follow them by fetching again
+          if (fallbackAsset.status >= 300 && fallbackAsset.status < 400) {
+            const redirectUrl = fallbackAsset.headers.get('Location');
+            if (redirectUrl) {
+              const redirectRequest = new Request(new URL(redirectUrl, request.url), request);
+              fallbackAsset = await env.ASSETS.fetch(redirectRequest);
+            }
+          }
+          
           let html = await fallbackAsset.text();
 
           // Inject environment variables into the HTML
