@@ -203,7 +203,7 @@ function CampaignsContent() {
   };
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto min-w-0 p-6">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h1 className="text-3xl font-bold">Campaigns</h1>
@@ -257,7 +257,7 @@ function CampaignsContent() {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-md border bg-card">
+        <div className="min-w-0 overflow-x-auto rounded-md border bg-card [-webkit-overflow-scrolling:touch]">
           <table className="w-full min-w-[640px]">
             <thead>
               <tr className="border-b">

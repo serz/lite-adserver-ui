@@ -117,8 +117,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
         </header>
 
-        {/* Page content */}
-        <main className="flex-1">{children}</main>
+        {/* Page content - min-w-0 allows flex child to shrink so table overflow scroll works */}
+        <main className="min-w-0 flex-1">{children}</main>
       </div>
     </div>
   );
