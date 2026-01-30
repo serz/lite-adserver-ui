@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -92,8 +92,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col">
+      {/* Main content — min-w-0 so column shrinks to viewport and table scrolls inside */}
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Top navigation */}
         <header className="h-16 border-b bg-card">
           <div className="flex h-full items-center px-4">
