@@ -63,12 +63,18 @@ function getNamespaceFromHostname(hostname: string): string {
 /**
  * Securely extract and validate namespace from the current domain.
  * Extracts the subdomain (first part before the first dot) and validates it.
+ * When running locally in dev (npm run dev), returns 'local' so x-namespace is sent.
  *
  * @returns The validated namespace string, or empty string if invalid/not available
  */
 export function getNamespace(): string {
   if (typeof window === 'undefined') return '';
-  return getNamespaceFromHostname(window.location.hostname);
+  const hostname = window.location.hostname;
+  const isDev = typeof process !== 'undefined' && process.env.NODE_ENV === 'development';
+  if (isDev && (hostname === 'localhost' || hostname === '127.0.0.1' || hostname.startsWith('localhost.'))) {
+    return 'local';
+  }
+  return getNamespaceFromHostname(hostname);
 }
 
 /**
