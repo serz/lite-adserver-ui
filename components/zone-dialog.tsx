@@ -305,10 +305,11 @@ export function ZoneDialog({
             </p>
           </div>
           
-          <DialogFooter>
+          <DialogFooter className="flex flex-row w-full gap-4">
             <Button 
               type="button" 
               variant="outline" 
+              className="flex-1 min-w-0"
               onClick={() => {
                 resetForm();
                 setIsOpen(false);
@@ -317,7 +318,7 @@ export function ZoneDialog({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" className="flex-1 min-w-0" disabled={isLoading}>
               {isLoading 
                 ? (mode === 'create' ? "Creating..." : "Updating...") 
                 : (mode === 'create' ? "Create Zone" : "Update Zone")
