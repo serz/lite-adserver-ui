@@ -1,20 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { isLoggedIn } from "@/lib/auth";
 
 export default function RootPage() {
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    // Redirect to dashboard if logged in, otherwise to login
+    // Only redirect when we're actually on the root path. Avoid redirecting when the server
+    // served root HTML for a different URL (e.g. SPA fallback for /dashboard/campaigns/edit/13/).
+    const isRoot = pathname === "/" || pathname === "";
+    if (!isRoot) return;
+
     if (isLoggedIn()) {
       router.push("/dashboard");
     } else {
       router.push("/login");
     }
-  }, [router]);
+  }, [router, pathname]);
 
   // Show minimal loading state while redirecting
   return (

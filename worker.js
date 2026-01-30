@@ -57,20 +57,30 @@ export default {
     }
 
     // Handle SPA routing for Next.js app
-    // For any non-asset request, serve the index.html to enable client-side routing
-    if (url.pathname.startsWith('/dashboard') || 
-        url.pathname.startsWith('/login') || 
+    // For any non-asset request, serve the appropriate shell HTML so client-side routing works.
+    // IMPORTANT: For /dashboard/* and /login/* we must NOT serve root index.html, because the root
+    // page immediately redirects to /dashboard or /login. That caused /dashboard/campaigns/edit/13/
+    // to load root HTML and then redirect to /dashboard. Serve the matching section's HTML instead.
+    if (url.pathname.startsWith('/dashboard') ||
+        url.pathname.startsWith('/login') ||
         url.pathname === '/' ||
-        !url.pathname.includes('.')) {
-      
+        (!url.pathname.includes('.') && !url.pathname.startsWith('/_next'))) {
+
       try {
-        // Serve index.html for SPA routes
-        const indexRequest = new Request(new URL('/', request.url), request);
-        const indexAsset = await env.ASSETS.fetch(indexRequest);
-        
-        if (indexAsset && indexAsset.status === 200) {
-          let html = await indexAsset.text();
-          
+        // Use explicit HTML file paths for Next.js static export
+        let fallbackPath = '/index.html';
+        if (url.pathname.startsWith('/dashboard')) {
+          fallbackPath = '/dashboard.html';
+        } else if (url.pathname.startsWith('/login')) {
+          fallbackPath = '/login.html';
+        }
+
+        const fallbackRequest = new Request(new URL(fallbackPath, request.url), request);
+        const fallbackAsset = await env.ASSETS.fetch(fallbackRequest);
+
+        if (fallbackAsset && fallbackAsset.status === 200) {
+          let html = await fallbackAsset.text();
+
           // Inject environment variables into the HTML
           const envScript = `
             <script>
@@ -80,7 +90,7 @@ export default {
               };
             </script>
           `;
-          
+
           // Insert the script before the closing head tag or at the beginning of body
           if (html.includes('</head>')) {
             html = html.replace('</head>', `${envScript}</head>`);
@@ -88,11 +98,11 @@ export default {
             // For minified HTML, insert after the head section
             html = html.replace('<body', `${envScript}<body`);
           }
-          
+
           return new Response(html, {
             status: 200,
             headers: {
-              ...Object.fromEntries(indexAsset.headers),
+              ...Object.fromEntries(fallbackAsset.headers),
               'Content-Type': 'text/html',
               'Cache-Control': 'no-cache, no-store, must-revalidate'
             }
