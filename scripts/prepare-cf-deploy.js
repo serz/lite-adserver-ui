@@ -13,6 +13,18 @@ async function prepareCloudflareDeploy() {
   await fs.remove(outputDir);
   await fs.ensureDir(outputDir);
   
+  // Copy HTML files from server/app (SSG output)
+  const serverAppDir = path.join(nextDir, 'server', 'app');
+  if (await fs.pathExists(serverAppDir)) {
+    await fs.copy(serverAppDir, outputDir, {
+      filter: (src, dest) => {
+        // Only copy HTML and meta files
+        return src.endsWith('.html') || src.endsWith('.meta') || fs.statSync(src).isDirectory();
+      }
+    });
+    console.log('✅ Copied HTML files from server/app');
+  }
+  
   // Copy static assets
   const staticDir = path.join(nextDir, 'static');
   if (await fs.pathExists(staticDir)) {
@@ -20,48 +32,45 @@ async function prepareCloudflareDeploy() {
     console.log('✅ Copied static assets');
   }
   
-  // Find the actual chunk filenames (they have hashes)
-  const chunksDir = path.join(outputDir, '_next', 'static', 'chunks');
-  const chunkFiles = await fs.readdir(chunksDir);
-  
-  const webpackChunk = chunkFiles.find(f => f.startsWith('webpack-'));
-  const mainAppChunk = chunkFiles.find(f => f.startsWith('main-app-'));
-  const polyfillsChunk = chunkFiles.find(f => f.startsWith('polyfills-'));
-  
-  // Find CSS file
-  const cssDir = path.join(outputDir, '_next', 'static', 'css');
-  let cssFile = null;
-  if (await fs.pathExists(cssDir)) {
-    const cssFiles = await fs.readdir(cssDir);
-    cssFile = cssFiles.find(f => f.endsWith('.css'));
+  // Copy chunks and other assets from build root
+  const buildAssets = ['chunks', 'css', 'media'];
+  for (const asset of buildAssets) {
+    const assetPath = path.join(nextDir, 'static', 'cloudflare-workers-build', asset);
+    if (await fs.pathExists(assetPath)) {
+      await fs.copy(assetPath, path.join(outputDir, '_next', 'static', 'cloudflare-workers-build', asset));
+      console.log(`✅ Copied ${asset}`);
+    }
   }
   
-  // Create an app shell HTML that loads the Next.js app with client-side routing
-  const cssLink = cssFile ? `<link rel="stylesheet" href="/_next/static/css/${cssFile}"/>` : '';
-  
-  const appShellHtml = `<!DOCTYPE html>
-<html>
+  // Ensure index.html exists at root for SPA routing
+  const indexPath = path.join(outputDir, 'index.html');
+  if (!(await fs.pathExists(indexPath))) {
+    // Try to copy from the dashboard route or create a basic one
+    const dashboardIndexPath = path.join(outputDir, 'dashboard', 'index.html');
+    if (await fs.pathExists(dashboardIndexPath)) {
+      await fs.copy(dashboardIndexPath, indexPath);
+      console.log('✅ Copied dashboard index.html as root index.html');
+    } else {
+      // Create a basic index.html that redirects to dashboard
+      const basicIndexHtml = `<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charSet="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1"/>
-    <title>Lite Adserver</title>
-    ${cssLink}
-    ${polyfillsChunk ? `<script src="/_next/static/chunks/${polyfillsChunk}" noModule=""></script>` : ''}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lite Adserver UI</title>
+    <script>
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+    </script>
 </head>
 <body>
     <div id="__next"></div>
-    ${webpackChunk ? `<script src="/_next/static/chunks/${webpackChunk}" async=""></script>` : ''}
-    ${mainAppChunk ? `<script src="/_next/static/chunks/${mainAppChunk}" async=""></script>` : ''}
 </body>
 </html>`;
-  
-  const indexPath = path.join(outputDir, 'index.html');
-  await fs.writeFile(indexPath, appShellHtml);
-  console.log('✅ Created app shell HTML');
-  console.log(`   - Webpack: ${webpackChunk || 'not found'}`);
-  console.log(`   - Main App: ${mainAppChunk || 'not found'}`);
-  console.log(`   - Polyfills: ${polyfillsChunk || 'not found'}`);
-  console.log(`   - CSS: ${cssFile || 'not found'}`);
+      await fs.writeFile(indexPath, basicIndexHtml);
+      console.log('✅ Created fallback index.html');
+    }
+  }
   
   console.log(`🎉 Deployment files prepared in ${outputDir}/`);
   console.log('Files ready for: wrangler deploy');
