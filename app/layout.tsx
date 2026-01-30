@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Lite Adserver Dashboard",
+  title: "Adserver Dashboard",
   description: "Dashboard for managing Lite Adserver campaigns, zones and statistics",
 };
 
