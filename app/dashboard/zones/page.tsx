@@ -312,7 +312,7 @@ function ZonesContent() {
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <span className="cursor-help">{getShortenedId(zone.id)}</span>
+                            <span>{getShortenedId(zone.id)}</span>
                           </TooltipTrigger>
                           <TooltipContent>
                             <p className="font-mono text-xs">{zone.id}</p>
