@@ -57,25 +57,15 @@ export default {
     }
 
     // Handle SPA routing for Next.js app
-    // For any non-asset request, serve the appropriate shell HTML so client-side routing works.
-    // IMPORTANT: For /dashboard/* and /login/* we must NOT serve root index.html, because the root
-    // page immediately redirects to /dashboard or /login. That caused /dashboard/campaigns/edit/13/
-    // to load root HTML and then redirect to /dashboard. Serve the matching section's HTML instead.
+    // For any non-asset request, serve index.html so client-side routing works
     if (url.pathname.startsWith('/dashboard') ||
         url.pathname.startsWith('/login') ||
         url.pathname === '/' ||
         (!url.pathname.includes('.') && !url.pathname.startsWith('/_next'))) {
 
       try {
-        // Use explicit HTML file paths for Next.js static export
-        let fallbackPath = '/index.html';
-        if (url.pathname.startsWith('/dashboard')) {
-          fallbackPath = '/dashboard.html';
-        } else if (url.pathname.startsWith('/login')) {
-          fallbackPath = '/login.html';
-        }
-
-        const fallbackRequest = new Request(new URL(fallbackPath, request.url), request);
+        // Serve index.html for all app routes (SPA mode)
+        const fallbackRequest = new Request(new URL('/index.html', request.url), request);
         let fallbackAsset = await env.ASSETS.fetch(fallbackRequest);
 
         // Handle successful responses (200-299) and redirects (300-399)

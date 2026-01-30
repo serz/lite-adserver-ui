@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, FormEvent, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/dashboard-layout";
 import { WithAuthGuard } from "@/components/with-auth-guard";
 import { Button } from "@/components/ui/button";
@@ -33,15 +33,40 @@ import { OsSelector } from '@/components/os-selector';
 
 
 
-interface EditCampaignPageProps {
-  params: {
-    id: string;
-  };
+export default function EditCampaignPage() {
+  return (
+    <DashboardLayout>
+      <Suspense fallback={
+        <div className="container mx-auto min-w-0 max-w-full p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold md:text-3xl">Edit Campaign</h1>
+          </div>
+          <div className="h-20 animate-pulse rounded-md bg-muted"></div>
+        </div>
+      }>
+        <EditCampaignContent />
+      </Suspense>
+    </DashboardLayout>
+  );
 }
 
-export default function EditCampaignPage({ params }: EditCampaignPageProps) {
-  const campaignId = parseInt(params.id, 10);
-  console.log("Edit Campaign Page - Campaign ID:", campaignId);
+function EditCampaignContent() {
+  const searchParams = useSearchParams();
+  const campaignId = parseInt(searchParams.get('id') || '0', 10);
+  console.log("Edit Campaign Page - Campaign ID from query:", campaignId);
+  
+  if (!campaignId) {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold md:text-3xl">Edit Campaign</h1>
+        </div>
+        <div className="rounded-md bg-destructive/15 p-4 text-destructive">
+          Campaign ID is required. Please select a campaign from the campaigns list.
+        </div>
+      </div>
+    );
+  }
   
   return (
     <DashboardLayout>

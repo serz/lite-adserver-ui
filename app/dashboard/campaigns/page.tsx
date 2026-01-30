@@ -314,7 +314,7 @@ function CampaignsContent() {
                             <Play className="h-4 w-4 text-green-500" />
                           )}
                         </Button>
-                        <Link href={`/dashboard/campaigns/edit/${campaign.id}`}>
+                        <Link href={`/dashboard/campaigns/edit?id=${campaign.id}`}>
                           <Button
                             variant="outline"
                             size="icon"
