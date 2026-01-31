@@ -159,13 +159,20 @@ export default function CreateCampaignPage() {
   
   // Apply device targeting rules
   useEffect(() => {
-    if (!deviceTypeRuleId || selectedDevices.length === 0) {
-      // Remove any existing device targeting rules
+    // All available device types
+    const allDeviceTypes = ['desktop', 'mobile', 'tablet', 'tv'];
+    
+    if (!deviceTypeRuleId) {
+      return;
+    }
+    
+    // If nothing selected OR all selected = no targeting rule (allow all)
+    if (selectedDevices.length === 0 || selectedDevices.length === allDeviceTypes.length) {
       setTargetingRules(prev => prev.filter(rule => rule.targeting_rule_type_id !== deviceTypeRuleId));
       return;
     }
     
-    // Create the device targeting rule
+    // Create the device targeting rule only for specific selections
     const deviceRule = {
       targeting_rule_type_id: deviceTypeRuleId,
       targeting_method: "whitelist" as const, // Always use whitelist for devices
@@ -511,22 +518,22 @@ export default function CreateCampaignPage() {
                         <ToggleGroupItem value="desktop" aria-label="Desktop" disabled={isLoading} className="flex-shrink-0">
                           <MonitorIcon className="h-4 w-4 md:mr-1" />
                           <span className="hidden md:inline">Desktop</span>
-                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("desktop") ? "bg-green-500" : "bg-red-500"}`}></span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("desktop") || selectedDevices.length === 0 ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="mobile" aria-label="Mobile" disabled={isLoading} className="flex-shrink-0">
                           <SmartphoneIcon className="h-4 w-4 md:mr-1" />
                           <span className="hidden md:inline">Mobile</span>
-                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("mobile") ? "bg-green-500" : "bg-red-500"}`}></span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("mobile") || selectedDevices.length === 0 ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="tablet" aria-label="Tablet" disabled={isLoading} className="flex-shrink-0">
                           <TabletIcon className="h-4 w-4 md:mr-1" />
                           <span className="hidden md:inline">Tablet</span>
-                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tablet") ? "bg-green-500" : "bg-red-500"}`}></span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tablet") || selectedDevices.length === 0 ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="tv" aria-label="TV" disabled={isLoading} className="flex-shrink-0">
                           <Tv className="h-4 w-4 md:mr-1" />
                           <span className="hidden md:inline">TV</span>
-                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tv") ? "bg-green-500" : "bg-red-500"}`}></span>
+                          <span className={`md:ml-1 inline-block h-2 w-2 rounded-full flex-shrink-0 ${selectedDevices.includes("tv") || selectedDevices.length === 0 ? "bg-green-500" : "bg-red-500"}`}></span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>

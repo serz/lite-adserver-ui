@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { useRouter, usePathname } from 'next/navigation';
 import { getApiKey, setApiKey, clearApiKey, isLoggedIn } from '@/lib/auth';
 import { api } from '@/lib/api';
+import { invalidateTenantSettingsCache } from '@/lib/tenant-settings-cache';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -82,6 +83,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback((): void => {
     // Clear the API key
     clearApiKey();
+    
+    // Clear tenant settings cache so next login gets fresh data
+    invalidateTenantSettingsCache();
     
     // Update authentication state
     setIsAuthenticated(false);

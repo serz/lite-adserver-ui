@@ -3,12 +3,18 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, BarChart3, Layers, Users } from "lucide-react";
+import { Menu, X, Home, BarChart3, Layers, Users, ChevronDown, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { TimezoneToggle } from "@/components/timezone-toggle";
 import { useAuth } from "@/components/auth-provider";
-import { useTenantDisplayName } from "@/lib/use-tenant-display-name";
+import { useTenantSettings } from "@/lib/use-tenant-settings";
+import { getNamespace } from "@/lib/api";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,9 +22,25 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [displayName, setDisplayName] = useState("Lite Adserver");
+  const [accountDropdownMounted, setAccountDropdownMounted] = useState(false);
   const pathname = usePathname();
   const { logout } = useAuth();
-  const tenantName = useTenantDisplayName();
+  const { company } = useTenantSettings();
+
+  useEffect(() => setAccountDropdownMounted(true), []);
+
+  // Update display name after mount to avoid hydration mismatch
+  useEffect(() => {
+    if (company) {
+      setDisplayName(company);
+    } else {
+      const namespace = getNamespace();
+      if (namespace) {
+        setDisplayName(namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase());
+      }
+    }
+  }, [company]);
   
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -56,7 +78,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center">
-            <span className="text-xl font-bold">{tenantName}</span>
+            <span className="text-xl font-bold">{displayName}</span>
           </div>
           <Button
             variant="ghost"
@@ -86,8 +108,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
         </nav>
-        <div className="absolute bottom-4 w-full px-4 flex items-center space-x-2">
-          <TimezoneToggle />
+        <div className="absolute bottom-4 w-full px-4 flex items-center justify-center">
           <ThemeToggle />
         </div>
       </div>
@@ -105,14 +126,37 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="ml-auto flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleSignOut}
-              >
-                Sign out
-              </Button>
+            <div className="ml-auto flex items-center">
+              {!accountDropdownMounted ? (
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  Account
+                  <ChevronDown className="h-4 w-4 opacity-70" />
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-1.5">
+                      Account
+                      <ChevronDown className="h-4 w-4 opacity-70" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem asChild>
+                      <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                        <Settings className="h-4 w-4" />
+                        Platform Settings
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </header>

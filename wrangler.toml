@@ -19,13 +19,12 @@ invocation_logs = true
 # Default vars (used for local development and inherited by environments)
 [vars]
 NEXT_PUBLIC_AD_SERVER_URL = "http://localhost:8787"
-NEXT_PUBLIC_TIMEZONE = "UTC"
 
 # Production environment - this is the only worker that should be deployed
 # Deploys as: lite-adserver-ui-production
 [env.production]
 name = "lite-adserver-ui-production"
-vars = { NODE_ENV = "production", NEXT_PUBLIC_AD_SERVER_URL = "https://api.affset.com", NEXT_PUBLIC_TIMEZONE = "UTC" }
+vars = { NODE_ENV = "production", NEXT_PUBLIC_AD_SERVER_URL = "https://api.affset.com" }
 
 [env.preview]
-vars = { NODE_ENV = "development", NEXT_PUBLIC_AD_SERVER_URL = "http://localhost:8787", NEXT_PUBLIC_TIMEZONE = "UTC" }
+vars = { NODE_ENV = "development", NEXT_PUBLIC_AD_SERVER_URL = "http://localhost:8787" }

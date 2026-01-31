@@ -1,12 +1,16 @@
 /**
  * Timezone utilities for consistent date/time handling
+ * TODO: Integrate with tenant settings timezone when available
  */
 
 /**
- * Get the configured timezone from environment variables
+ * Get the timezone (defaults to UTC)
+ * In the future, this will fetch from tenant settings
  */
 export const getTimezone = (): string => {
-  return process.env.NEXT_PUBLIC_TIMEZONE || 'UTC';
+  // For now, always use UTC since NEXT_PUBLIC_TIMEZONE env var has been removed
+  // This will be updated to fetch from tenant settings in the future
+  return 'UTC';
 };
 
 /**
