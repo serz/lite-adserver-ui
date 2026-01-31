@@ -1,12 +1,14 @@
 # Base worker name (used for local development only - DO NOT DEPLOY)
 # Always use --env production when deploying
 name = "lite-adserver-ui"
-compatibility_date = "2024-01-01"
-main = "worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+# OpenNext generates the worker entry point
+main = ".open-next/worker.js"
 
-# Static assets configuration
+# Static assets configuration - OpenNext output
 [assets]
-directory = "cf-deploy"
+directory = ".open-next/assets"
 binding = "ASSETS"
 
 [observability]

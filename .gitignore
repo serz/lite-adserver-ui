@@ -30,6 +30,8 @@ yarn-error.log*
 wrangler.toml.bak
 .cfignore
 cf-deploy/
+.open-next/
+.wrangler/
 
 # typescript
 *.tsbuildinfo

@@ -10,12 +10,12 @@ interface ApiError {
 
 // Get the API URL from various sources (Next.js env, Cloudflare injected env, or fallback)
 export const getApiUrl = (): string => {
-  // Try Next.js environment variable first (for dev server)
+  // Try Next.js environment variable first (works in both dev and SSR on Cloudflare)
   if (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_AD_SERVER_URL) {
     return process.env.NEXT_PUBLIC_AD_SERVER_URL;
   }
   
-  // Try Cloudflare injected environment variables (for Workers)
+  // Try Cloudflare injected environment variables (legacy support for old static export)
   if (typeof window !== 'undefined' && (window as any).__CLOUDFLARE_ENV__?.NEXT_PUBLIC_AD_SERVER_URL) {
     return (window as any).__CLOUDFLARE_ENV__.NEXT_PUBLIC_AD_SERVER_URL;
   }

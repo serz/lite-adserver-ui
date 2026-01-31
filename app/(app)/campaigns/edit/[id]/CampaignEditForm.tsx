@@ -1,24 +1,40 @@
-import CampaignEditForm from "./CampaignEditForm";
+"use client";
 
-interface EditCampaignPageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+import { useState, useEffect, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { getCampaign, updateCampaign } from "@/lib/services/campaigns";
+import { getZones } from "@/lib/services/zones";
+import { Campaign, TargetingRule, Zone } from "@/types/api";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
+import { api } from "@/lib/api";
+import { CountrySelector } from "@/components/country-selector";
+import { ZoneSelector } from "@/components/zone-selector";
+import { BrowserSelector } from '@/components/browser-selector';
+import { OsSelector } from '@/components/os-selector';
 
-export default async function EditCampaignPage({ params }: EditCampaignPageProps) {
-  const { id } = await params;
-  const campaignId = parseInt(id, 10);
-  
-  return <CampaignEditForm campaignId={campaignId} />;
-}
-
-interface CampaignFormProps {
+interface CampaignEditFormProps {
   campaignId: number;
 }
 
-function CampaignForm({ campaignId }: CampaignFormProps) {
-  console.log("CampaignForm rendered with ID:", campaignId);
+export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) {
+  console.log("CampaignEditForm rendered with ID:", campaignId);
   const router = useRouter();
   const { toast } = useToast();
   
@@ -891,4 +907,4 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
       )}
     </div>
   );
-} 
+}
