@@ -9,8 +9,18 @@ import {
   CACHE_DURATION,
   invalidateTenantSettingsCache,
 } from "@/lib/tenant-settings-cache";
+import { hexToHsl } from "@/lib/color-utils";
 
 export { invalidateTenantSettingsCache } from "@/lib/tenant-settings-cache";
+
+/** Convert API response (hex colors) to HSL for cache/theme use */
+function toHslSettings(raw: TenantSettings): TenantSettings {
+  return {
+    ...raw,
+    primary_color: hexToHsl(raw.primary_color),
+    secondary_color: hexToHsl(raw.secondary_color),
+  };
+}
 
 /**
  * Hook to fetch and cache tenant settings.
@@ -42,7 +52,8 @@ export function useTenantSettings() {
     try {
       setIsLoading(true);
       setError(null);
-      const data = await getTenantSettings();
+      const raw = await getTenantSettings();
+      const data = toHslSettings(raw);
       setCachedTenantSettings(data);
       setSettings(data);
     } catch (err) {

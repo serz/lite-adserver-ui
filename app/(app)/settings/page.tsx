@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/lib/use-tenant-settings";
-import { updateTenantSettings } from "@/lib/services/tenant";
+import { getTenantSettings, updateTenantSettings } from "@/lib/services/tenant";
 import { getTimezoneOptionsWithCurrent } from "@/lib/timezones";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
@@ -33,7 +33,7 @@ const COLOR_PRESETS = [
 
 export default function SettingsPage() {
   const { toast } = useToast();
-  const { settings, isLoading: settingsLoading, refetch } = useTenantSettings();
+  const { refetch } = useTenantSettings();
 
   const [company, setCompany] = useState("");
   const [timezone, setTimezone] = useState("");
@@ -41,21 +41,36 @@ export default function SettingsPage() {
   const [secondaryColor, setSecondaryColor] = useState("#6D28D9");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formLoading, setFormLoading] = useState(true);
 
   // Include current timezone in options so Select can pre-select it after refresh
   const timezoneOptions = useMemo(
-    () => getTimezoneOptionsWithCurrent(settings?.timezone),
-    [settings?.timezone]
+    () => getTimezoneOptionsWithCurrent(timezone),
+    [timezone]
   );
 
-  // Pre-fill form when settings load (including timezone so it stays in sync)
+  // Load form from API directly (hex from DB), not from cache
   useEffect(() => {
-    if (!settings) return;
-    setCompany(settings.company ?? "");
-    setTimezone(settings.timezone ?? "UTC");
-    setPrimaryColor(settings.primary_color ?? "#7C3AED");
-    setSecondaryColor(settings.secondary_color ?? "#6D28D9");
-  }, [settings]);
+    let cancelled = false;
+    setFormLoading(true);
+    getTenantSettings()
+      .then((data) => {
+        if (cancelled) return;
+        setCompany(data.company ?? "");
+        setTimezone(data.timezone ?? "UTC");
+        setPrimaryColor(data.primary_color ?? "#7C3AED");
+        setSecondaryColor(data.secondary_color ?? "#6D28D9");
+      })
+      .catch(() => {
+        if (!cancelled) setFormError("Failed to load settings.");
+      })
+      .finally(() => {
+        if (!cancelled) setFormLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +120,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (settingsLoading && !settings) {
+  if (formLoading) {
     return (
       <div className="container mx-auto min-w-0 max-w-full p-6">
         <h1 className="mb-6 text-2xl font-bold md:text-3xl">Platform Settings</h1>
