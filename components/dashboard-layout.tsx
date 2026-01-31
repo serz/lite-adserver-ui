@@ -28,9 +28,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   // Navigation items
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
-    { name: "Campaigns", href: "/dashboard/campaigns", icon: Layers },
-    { name: "Zones", href: "/dashboard/zones", icon: Users },
-    { name: "Statistics", href: "/dashboard/stats", icon: BarChart3 },
+    { name: "Campaigns", href: "/campaigns", icon: Layers },
+    { name: "Zones", href: "/zones", icon: Users },
+    { name: "Statistics", href: "/stats", icon: BarChart3 },
   ];
 
   const handleSignOut = (e: React.MouseEvent) => {
@@ -69,7 +69,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
         <nav className="space-y-0.5 px-2 py-4">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
             return (
               <Link
                 key={item.name}

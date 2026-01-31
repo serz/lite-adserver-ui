@@ -63,7 +63,7 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTa
             ? 'Get your ad link from Zones and start serving ads to see statistics here.'
             : 'Create a zone and add the ad code to your site to start seeing statistics.'}
         </p>
-        <Link href="/dashboard/zones">
+        <Link href="/zones">
           <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
             Go to Zones
           </Button>

@@ -1,6 +1,5 @@
 "use client";
 
-import DashboardLayout from '@/components/dashboard-layout';
 import { StatsTable } from '@/components/stats-table';
 import { useStatsPage } from '@/lib/context/stats-page-context';
 import { useStats } from '@/lib/context/stats-context';
@@ -16,34 +15,10 @@ import {
 } from '@/components/ui/select';
 import { DateRange } from 'react-day-picker';
 import { useCallback } from 'react';
-import { WithAuthGuard } from '@/components/with-auth-guard';
 
 type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 
 export default function StatsPage() {
-  return (
-    <DashboardLayout>
-      <WithAuthGuard
-        loadingComponent={
-          <div className="container mx-auto min-w-0 max-w-full p-6">
-            <div className="mb-6 flex items-center justify-between">
-              <h1 className="text-2xl font-bold md:text-3xl">Statistics</h1>
-            </div>
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-20 animate-pulse rounded-md bg-muted"></div>
-              ))}
-            </div>
-          </div>
-        }
-      >
-        <StatsContent />
-      </WithAuthGuard>
-    </DashboardLayout>
-  );
-}
-
-function StatsContent() {
   const {
     stats,
     isLoading,
@@ -56,7 +31,6 @@ function StatsContent() {
   } = useStatsPage();
   const { zonesCount } = useStats();
 
-  // Handle date range change
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     if (range?.from) {
       setDateRange({
@@ -66,9 +40,7 @@ function StatsContent() {
     }
   }, [setDateRange]);
 
-  // Force refresh bypassing cache
   const handleRefresh = useCallback(() => {
-    // Pass false to bypass cache when manually refreshing
     refetch(false);
   }, [refetch]);
 
@@ -78,26 +50,18 @@ function StatsContent() {
         <h1 className="text-2xl font-bold md:text-3xl">Statistics</h1>
       </div>
 
-      {/* Filters section */}
       <div className="mb-6 rounded-lg border bg-card p-4 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div>
             <h3 className="text-sm font-medium mb-1">Date Range</h3>
-            <DateRangePicker 
-              value={{
-                from: dateRange.from,
-                to: dateRange.to
-              }}
+            <DateRangePicker
+              value={{ from: dateRange.from, to: dateRange.to }}
               onChange={handleDateRangeChange}
             />
           </div>
-          
           <div>
             <h3 className="text-sm font-medium mb-1">Group By</h3>
-            <Select 
-              value={groupBy} 
-              onValueChange={(value: GroupByOption) => setGroupBy(value)}
-            >
+            <Select value={groupBy} onValueChange={(value: GroupByOption) => setGroupBy(value)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Group by..." />
               </SelectTrigger>
@@ -112,21 +76,14 @@ function StatsContent() {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="ml-auto flex items-center gap-2">  
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh}
-              disabled={isLoading}
-            >
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
               Refresh
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Stats table */}
       <div className="mb-4">
         {error ? (
           <div className="p-4 text-center text-destructive bg-destructive/10 rounded-md">
@@ -143,4 +100,4 @@ function StatsContent() {
       </div>
     </div>
   );
-} 
+}

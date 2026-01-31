@@ -2,8 +2,6 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import DashboardLayout from "@/components/dashboard-layout";
-import { WithAuthGuard } from "@/components/with-auth-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,22 +41,7 @@ export default function EditCampaignPage({ params }: EditCampaignPageProps) {
   const campaignId = parseInt(params.id, 10);
   console.log("Edit Campaign Page - Campaign ID:", campaignId);
   
-  return (
-    <DashboardLayout>
-      <WithAuthGuard
-        loadingComponent={
-          <div className="container mx-auto min-w-0 max-w-full p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold md:text-3xl">Edit Campaign</h1>
-            </div>
-            <div className="h-20 animate-pulse rounded-md bg-muted"></div>
-          </div>
-        }
-      >
-        <CampaignForm campaignId={campaignId} />
-      </WithAuthGuard>
-    </DashboardLayout>
-  );
+  return <CampaignForm campaignId={campaignId} />;
 }
 
 interface CampaignFormProps {
@@ -607,7 +590,7 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
       });
 
       // Navigate back to campaigns list (only if both updates succeed)
-      router.push("/dashboard/campaigns");
+      router.push("/campaigns");
 
     } catch (error) {
       console.error("Failed to update campaign or targeting rules:", error);
@@ -643,7 +626,7 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
             </Button>
             <Button 
               variant="outline" 
-              onClick={() => router.push("/dashboard/campaigns")}
+              onClick={() => router.push("/campaigns")}
               className="ml-2"
             >
               Back to Campaigns
@@ -925,7 +908,7 @@ function CampaignForm({ campaignId }: CampaignFormProps) {
                 type="button" 
                 variant="outline" 
                 className="flex-1 min-w-0"
-                onClick={() => router.push("/dashboard/campaigns")}
+                onClick={() => router.push("/campaigns")}
                 disabled={isLoading}
               >
                 Cancel

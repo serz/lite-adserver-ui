@@ -1,9 +1,7 @@
 "use client";
 
-import DashboardLayout from '@/components/dashboard-layout';
 import { useStats } from '@/lib/context/stats-context';
 import { RecentActivity } from '@/components/recent-activity';
-import { WithAuthGuard } from '@/components/with-auth-guard';
 import { DemoInstanceWarning } from '@/components/demo-instance-warning';
 import { HelpCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -16,33 +14,9 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function DashboardPage() {
-  return (
-    <DashboardLayout>
-      <WithAuthGuard
-        loadingComponent={
-          <div className="container mx-auto min-w-0 max-w-full p-6">
-            <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
-<div className="grid grid-cols-2 gap-6 lg:grid-cols-3">
-            {[...Array(4)].map((_, i) => (
-                <div key={i} className="rounded-lg border bg-card p-6 shadow-sm">
-                  <div className="h-8 w-28 animate-pulse rounded bg-muted mb-2"></div>
-                  <div className="h-10 w-16 animate-pulse rounded bg-muted"></div>
-                </div>
-              ))}
-            </div>
-          </div>
-        }
-      >
-        <DashboardContent />
-      </WithAuthGuard>
-    </DashboardLayout>
-  );
-}
-
-function DashboardContent() {
-  const { 
-    impressions, 
-    clicks, 
+  const {
+    impressions,
+    clicks,
     campaignsCount,
     zonesCount,
     isLoading: statsLoading,
@@ -52,7 +26,7 @@ function DashboardContent() {
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
-      
+
       {/* Demo Instance Warning Widget */}
       <div className="mb-6">
         <DemoInstanceWarning />
@@ -65,18 +39,18 @@ function DashboardContent() {
             Create your first campaign and add zones to start serving ads.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <Link href="/dashboard/campaigns/create">
+            <Link href="/campaigns/create">
               <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
                 Create Campaign
               </Button>
             </Link>
-            <Link href="/dashboard/zones">
+            <Link href="/zones">
               <Button variant="outline">Manage Zones</Button>
             </Link>
           </div>
         </div>
       )}
-      
+
       <div className="grid grid-cols-2 gap-6 lg:grid-cols-3">
         {/* Campaign Stats Card */}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
@@ -107,7 +81,7 @@ function DashboardContent() {
             <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
         </div>
-        
+
         {/* Zones Stats Card */}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Zones</h3>
@@ -125,7 +99,7 @@ function DashboardContent() {
             <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
         </div>
-        
+
         {/* Impressions Card */}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Impressions</h3>
@@ -143,7 +117,7 @@ function DashboardContent() {
             <p className="mt-2 text-xs text-destructive">{statsError}</p>
           )}
         </div>
-        
+
         {/* Clicks Card */}
         <div className="rounded-lg border bg-card p-6 shadow-sm">
           <h3 className="mb-2 text-lg font-medium">Clicks</h3>
@@ -162,11 +136,11 @@ function DashboardContent() {
           )}
         </div>
       </div>
-      
+
       <div className="mt-8 rounded-lg border bg-card p-6 shadow-sm">
         <h2 className="mb-4 text-xl font-semibold">Recent Activity</h2>
         <RecentActivity />
       </div>
     </div>
   );
-} 
+}

@@ -34,7 +34,7 @@ export function RecentActivity() {
       type: 'campaign' as const,
       created_at: campaign.created_at,
       status: campaign.status,
-      url: `/dashboard/campaigns/edit/${campaign.id}`,
+      url: `/campaigns/edit/${campaign.id}`,
     })),
     ...recentActiveZones.map((zone: Zone) => ({
       id: zone.id,
@@ -42,7 +42,7 @@ export function RecentActivity() {
       type: 'zone' as const, 
       created_at: zone.created_at,
       status: zone.status,
-      url: `/dashboard/zones`,
+      url: `/zones`,
     })),
   ].sort((a, b) => b.created_at - a.created_at).slice(0, 5);
 
@@ -93,7 +93,7 @@ export function RecentActivity() {
         <p className="text-sm text-muted-foreground mb-4 max-w-sm">
           Create your first campaign or add a zone to see activity here.
         </p>
-        <Link href="/dashboard/campaigns/create">
+        <Link href="/campaigns/create">
           <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
             Create Campaign
           </Button>

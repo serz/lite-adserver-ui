@@ -2,8 +2,6 @@
 
 import { useState, useEffect, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import DashboardLayout from "@/components/dashboard-layout";
-import { WithAuthGuard } from "@/components/with-auth-guard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,25 +29,6 @@ import { BrowserSelector } from '@/components/browser-selector';
 import { OsSelector } from '@/components/os-selector';
 
 export default function CreateCampaignPage() {
-  return (
-    <DashboardLayout>
-      <WithAuthGuard
-        loadingComponent={
-          <div className="container mx-auto min-w-0 max-w-full p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold md:text-3xl">Create Campaign</h1>
-            </div>
-            <div className="h-20 animate-pulse rounded-md bg-muted"></div>
-          </div>
-        }
-      >
-        <CampaignForm />
-      </WithAuthGuard>
-    </DashboardLayout>
-  );
-}
-
-function CampaignForm() {
   const router = useRouter();
   const { toast } = useToast();
   
@@ -377,7 +356,7 @@ function CampaignForm() {
       });
       
       // Redirect to campaigns page
-      router.push("/dashboard/campaigns");
+      router.push("/campaigns");
     } catch (error) {
       setFormError("Failed to create campaign. Please try again.");
       console.error("Campaign creation error:", error);
@@ -673,7 +652,7 @@ function CampaignForm() {
               type="button" 
               variant="outline" 
               className="flex-1 min-w-0"
-              onClick={() => router.push("/dashboard/campaigns")}
+              onClick={() => router.push("/campaigns")}
               disabled={isLoading}
             >
               Cancel

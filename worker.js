@@ -58,8 +58,11 @@ export default {
 
     // Handle SPA routing for Next.js app
     // For any non-asset request, serve the index.html to enable client-side routing
-    if (url.pathname.startsWith('/dashboard') || 
-        url.pathname.startsWith('/login') || 
+    if (url.pathname.startsWith('/dashboard') ||
+        url.pathname.startsWith('/campaigns') ||
+        url.pathname.startsWith('/zones') ||
+        url.pathname.startsWith('/stats') ||
+        url.pathname.startsWith('/login') ||
         url.pathname === '/' ||
         !url.pathname.includes('.')) {
       
