@@ -3,7 +3,7 @@
 import { useStats } from '@/lib/context/stats-context';
 import { RecentActivity } from '@/components/recent-activity';
 import { DemoInstanceWarning } from '@/components/demo-instance-warning';
-import { HelpCircle } from 'lucide-react';
+import { HelpCircle, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import {
   Tooltip,
@@ -20,12 +20,24 @@ export default function DashboardPage() {
     campaignsCount,
     zonesCount,
     isLoading: statsLoading,
-    error: statsError
+    error: statsError,
+    refetchStats,
   } = useStats();
 
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
-      <h1 className="mb-6 text-2xl font-bold md:text-3xl">Dashboard</h1>
+      <div className="mb-6 flex items-center gap-2">
+        <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => refetchStats()}
+          disabled={statsLoading}
+          title="Refresh dashboard"
+        >
+          <RefreshCw className={`h-5 w-5 ${statsLoading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
 
       {/* Demo Instance Warning Widget */}
       <div className="mb-6">
