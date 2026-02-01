@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { getStatsForPeriod, getDefaultDateRange } from '@/lib/services/stats';
 import { StatsResponse } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { useTenantSettings } from '@/lib/use-tenant-settings';
 
 interface StatsPageContextType {
   stats: StatsResponse | null;
@@ -28,11 +29,23 @@ const StatsPageContext = createContext<StatsPageContextType | undefined>(undefin
 
 export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
-  const defaultRange = getDefaultDateRange();
+  const { timezone: profileTimezone } = useTenantSettings();
+  const tz = profileTimezone ?? 'UTC';
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(defaultRange);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() =>
+    getDefaultDateRange('UTC')
+  );
+  const hasAppliedTimezoneDefaultRef = useRef(false);
+
+  // When profile timezone loads, set default range once so "yesterday/today" is in platform time
+  useEffect(() => {
+    if (profileTimezone && !hasAppliedTimezoneDefaultRef.current) {
+      hasAppliedTimezoneDefaultRef.current = true;
+      setDateRange(getDefaultDateRange(profileTimezone));
+    }
+  }, [profileTimezone]);
   const [campaignIds, setCampaignIds] = useState<number[]>([]);
   const [zoneIds, setZoneIds] = useState<number[]>([]);
   const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id'>('date');
@@ -67,10 +80,11 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
       const response = await getStatsForPeriod({
         from: dateRange.from,
         to: dateRange.to,
+        timeZone: tz,
         campaignIds: campaignIds.length > 0 ? campaignIds : undefined,
         zoneIds: zoneIds.length > 0 ? zoneIds : undefined,
         groupBy: groupBy,
-        useCache: useCache
+        useCache: useCache,
       });
       
       setStats(response);
@@ -101,7 +115,7 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized, dateRange, campaignIds, zoneIds, groupBy]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, dateRange, campaignIds, zoneIds, groupBy, tz]);
 
   // Update the date range and trigger a refetch
   const handleDateRangeUpdate = useCallback((range: { from: Date; to: Date }) => {

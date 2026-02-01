@@ -1,6 +1,10 @@
 import { api } from '@/lib/api';
 import { StatsResponse } from '@/types/api';
-import { getTimezone } from '@/lib/timezone';
+import {
+  getTimezone,
+  getUtcMsForStartOfDayInTimezone,
+  getUtcMsForEndOfDayInTimezone,
+} from '@/lib/timezone';
 
 interface SyncStateResponse {
   campaigns: {
@@ -33,25 +37,46 @@ const cache: StatsCache = {};
 const CACHE_DURATION = 5 * 60 * 1000;
 
 /**
- * Generate default date range for statistics
- * @returns Object with from and to dates based on timezone
+ * Get current calendar date (y, m, d) in the given timezone.
  */
-export function getDefaultDateRange(): { from: Date, to: Date } {
-  const timezone = getTimezone();
-  const now = new Date();
-  
-  // Create date for yesterday at 00:00:00 in the current timezone
-  const yesterday = new Date(now);
-  yesterday.setDate(now.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
-  
-  // Create date for today at 23:59:59 in the current timezone
-  const today = new Date(now);
-  today.setHours(23, 59, 59, 999);
-  
+function getCalendarDateInTimezone(instant: Date, timeZone: string): { y: number; m: number; d: number } {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(instant);
+  const get = (name: string) =>
+    parseInt(parts.find((p) => p.type === name)?.value ?? '0', 10);
   return {
-    from: new Date(yesterday.toLocaleString('en-US', { timeZone: timezone })),
-    to: new Date(today.toLocaleString('en-US', { timeZone: timezone }))
+    y: get('year'),
+    m: get('month') - 1,
+    d: get('day'),
+  };
+}
+
+/**
+ * Generate default date range for statistics (yesterday 00:00 to today 23:59:59 in profile timezone, as UTC).
+ * @param timeZone Profile timezone (e.g. Europe/Riga). Defaults to getTimezone().
+ */
+export function getDefaultDateRange(timeZone?: string): { from: Date; to: Date } {
+  const tz = timeZone ?? getTimezone();
+  const now = new Date();
+  const today = getCalendarDateInTimezone(now, tz);
+  const yesterdayDate = new Date(today.y, today.m, today.d - 1);
+
+  const fromMs = getUtcMsForStartOfDayInTimezone(
+    yesterdayDate.getFullYear(),
+    yesterdayDate.getMonth(),
+    yesterdayDate.getDate(),
+    tz
+  );
+  const toMs = getUtcMsForEndOfDayInTimezone(today.y, today.m, today.d, tz);
+
+  return {
+    from: new Date(fromMs),
+    to: new Date(toMs),
   };
 }
 
@@ -173,49 +198,66 @@ function isLast7DaysRange(from: number, to: number): boolean {
 }
 
 /**
- * Get stats for a specific date range with additional filtering options
+ * Get stats for a specific date range with additional filtering options.
+ * from = selected "from" day at 00:00:00 in profile timezone (converted to UTC).
+ * to = selected "to" day at 23:59:59 in profile timezone (converted to UTC).
  */
 export async function getStatsForPeriod(options: {
   from?: Date;
   to?: Date;
+  timeZone?: string;
   campaignIds?: number[];
   zoneIds?: number[];
   groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
   useCache?: boolean;
 }): Promise<StatsResponse> {
-  // Use default date range if not provided
-  const defaultRange = getDefaultDateRange();
-  const fromDate = options.from || defaultRange.from;
-  const toDate = options.to || defaultRange.to;
+  const tz = options.timeZone ?? getTimezone();
+  const defaultRange = getDefaultDateRange(tz);
+  const fromDate = options.from ?? defaultRange.from;
+  const toDate = options.to ?? defaultRange.to;
+
+  const fromMs = getUtcMsForStartOfDayInTimezone(
+    fromDate.getFullYear(),
+    fromDate.getMonth(),
+    fromDate.getDate(),
+    tz
+  );
+  const toMs = getUtcMsForEndOfDayInTimezone(
+    toDate.getFullYear(),
+    toDate.getMonth(),
+    toDate.getDate(),
+    tz
+  );
 
   return getStats({
-    from: fromDate.getTime(),
-    to: toDate.getTime(),
+    from: fromMs,
+    to: toMs,
     campaignIds: options.campaignIds,
     zoneIds: options.zoneIds,
     groupBy: options.groupBy,
-    useCache: options.useCache !== false
+    useCache: options.useCache !== false,
   });
 }
 
 /**
- * Get stats for the last 7 days, based on current timezone
+ * Get stats for the last 7 days (from 7 days ago 00:00 in profile timezone, to now).
  */
 export async function getLast7DaysStats(): Promise<StatsResponse> {
-  const timezone = getTimezone();
+  const tz = getTimezone();
   const now = new Date();
-  
-  // Create date for 7 days ago at 00:00:00 in the current timezone
-  const from = new Date(now);
-  from.setDate(now.getDate() - 7);
-  from.setHours(0, 0, 0, 0);
-  
-  // Convert to the selected timezone
-  const fromInTimezone = new Date(from.toLocaleString('en-US', { timeZone: timezone }));
-  
+  const today = getCalendarDateInTimezone(now, tz);
+  const sevenDaysAgo = new Date(today.y, today.m, today.d - 7);
+
+  const fromMs = getUtcMsForStartOfDayInTimezone(
+    sevenDaysAgo.getFullYear(),
+    sevenDaysAgo.getMonth(),
+    sevenDaysAgo.getDate(),
+    tz
+  );
+
   return getStats({
-    from: fromInTimezone.getTime(),
-    useCache: true
+    from: fromMs,
+    useCache: true,
   });
 }
 
