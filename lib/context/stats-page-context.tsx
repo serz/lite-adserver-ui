@@ -10,10 +10,11 @@ interface StatsPageContextType {
   stats: StatsResponse | null;
   isLoading: boolean;
   error: string | null;
+  /** Null until tenant settings (timezone) have loaded, to avoid UTC-then-platform-timezone flash */
   dateRange: {
     from: Date;
     to: Date;
-  };
+  } | null;
   setDateRange: (range: { from: Date; to: Date }) => void;
   campaignIds: number[];
   setCampaignIds: (ids: number[]) => void;
@@ -29,23 +30,23 @@ const StatsPageContext = createContext<StatsPageContextType | undefined>(undefin
 
 export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
-  const { timezone: profileTimezone } = useTenantSettings();
+  const { timezone: profileTimezone, isLoading: tenantSettingsLoading } = useTenantSettings();
   const tz = profileTimezone ?? 'UTC';
   const [stats, setStats] = useState<StatsResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() =>
-    getDefaultDateRange('UTC')
-  );
-  const hasAppliedTimezoneDefaultRef = useRef(false);
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date } | null>(null);
+  const dateRangeInitializedRef = useRef(false);
 
-  // When profile timezone loads, set default range once so "yesterday/today" is in platform time
+  // Set default date range only once we know timezone (after tenant settings load) to avoid UTC→platform flash and double API request
   useEffect(() => {
-    if (profileTimezone && !hasAppliedTimezoneDefaultRef.current) {
-      hasAppliedTimezoneDefaultRef.current = true;
-      setDateRange(getDefaultDateRange(profileTimezone));
-    }
-  }, [profileTimezone]);
+    if (dateRangeInitializedRef.current) return;
+    if (!isAuthReady) return;
+    if (isAuthenticated && tenantSettingsLoading) return; // wait for tenant settings (timezone)
+    dateRangeInitializedRef.current = true;
+    setDateRange(getDefaultDateRange(profileTimezone ?? 'UTC'));
+  }, [isAuthReady, isAuthenticated, tenantSettingsLoading, profileTimezone]);
+
   const [campaignIds, setCampaignIds] = useState<number[]>([]);
   const [zoneIds, setZoneIds] = useState<number[]>([]);
   const [groupBy, setGroupBy] = useState<'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id'>('date');
@@ -54,6 +55,10 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   const networkErrorRef = useRef(false);
   
   const fetchStats = useCallback(async (useCache: boolean = true) => {
+    // Don't fetch until we have a date range (set after tenant timezone is ready)
+    if (!dateRange) {
+      return;
+    }
     // Only fetch if auth is ready and user is authenticated
     if (!isAuthReady) {
       console.log('Stats page context: Auth not ready yet');

@@ -54,10 +54,14 @@ export default function StatsPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div>
             <h3 className="text-sm font-medium mb-1">Date Range</h3>
-            <DateRangePicker
-              value={{ from: dateRange.from, to: dateRange.to }}
-              onChange={handleDateRangeChange}
-            />
+            {dateRange ? (
+              <DateRangePicker
+                value={{ from: dateRange.from, to: dateRange.to }}
+                onChange={handleDateRangeChange}
+              />
+            ) : (
+              <div className="h-9 w-[280px] animate-pulse rounded-md border bg-muted" />
+            )}
           </div>
           <div>
             <h3 className="text-sm font-medium mb-1">Group By</h3>
@@ -77,7 +81,7 @@ export default function StatsPage() {
             </Select>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading || !dateRange}>
               Refresh
             </Button>
           </div>
