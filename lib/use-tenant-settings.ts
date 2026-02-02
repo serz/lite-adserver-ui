@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getTenantSettings, TenantSettings } from "@/lib/services/tenant";
+import {
+  getTenantSettings,
+  getPublicTenantSettings,
+  TenantSettings,
+} from "@/lib/services/tenant";
 import { useAuth } from "@/components/auth-provider";
 import {
   getCachedTenantSettings,
@@ -10,6 +14,7 @@ import {
   invalidateTenantSettingsCache,
 } from "@/lib/tenant-settings-cache";
 import { hexToHsl } from "@/lib/color-utils";
+import { getNamespace } from "@/lib/api";
 
 export { invalidateTenantSettingsCache } from "@/lib/tenant-settings-cache";
 
@@ -89,8 +94,55 @@ export function useTenantSettings() {
     error,
     refetch,
     company: settings?.company,
+    email: settings?.email,
     timezone: settings?.timezone,
     primaryColor: settings?.primary_color,
     secondaryColor: settings?.secondary_color,
   };
+}
+
+/**
+ * Fetches public tenant settings (no auth). Use on login page to customise branding.
+ * Only fetches when namespace is present (e.g. subdomain). Returns company and theme colors (HSL).
+ */
+export function usePublicTenantSettings() {
+  const [company, setCompany] = useState<string | null>(null);
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null);
+  const [secondaryColor, setSecondaryColor] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const namespace = getNamespace();
+    if (!namespace) {
+      setCompany(null);
+      setPrimaryColor(null);
+      setSecondaryColor(null);
+      setIsLoading(false);
+      return;
+    }
+    let cancelled = false;
+    getPublicTenantSettings()
+      .then((raw) => {
+        if (cancelled) return;
+        setCompany(raw.company);
+        setPrimaryColor(hexToHsl(raw.primary_color));
+        setSecondaryColor(hexToHsl(raw.secondary_color));
+        setError(null);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.warn("Failed to fetch public tenant settings:", err);
+          setError(err instanceof Error ? err : new Error(String(err)));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { company, primaryColor, secondaryColor, isLoading, error };
 }

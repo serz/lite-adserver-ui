@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/lib/use-tenant-settings";
 import { getTenantSettings, updateTenantSettings } from "@/lib/services/tenant";
 import { getTimezoneOptionsWithCurrent } from "@/lib/timezones";
+import { Globe } from "lucide-react";
 
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 
@@ -155,6 +156,9 @@ export default function SettingsPage() {
             disabled={isSubmitting}
             className="w-full"
           />
+          <p className="text-xs text-muted-foreground">
+            Shown on the login page and in the sidebar as the platform name (logo area).
+          </p>
         </div>
 
         <div className="space-y-2">
@@ -249,6 +253,19 @@ export default function SettingsPage() {
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <Label>Custom domain</Label>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-10 px-6 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-3">
+              <Globe className="h-6 w-6" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Coming soon</p>
+            <p className="text-muted-foreground text-xs max-w-sm">
+              Custom domain configuration for your ad server will be available here.
+            </p>
           </div>
         </div>
 

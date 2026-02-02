@@ -7,8 +7,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth-provider";
 import { isLoggedIn } from "@/lib/auth";
-import { useTenantSettings } from "@/lib/use-tenant-settings";
+import { usePublicTenantSettings } from "@/lib/use-tenant-settings";
 import { getNamespace } from "@/lib/api";
+import { darkenHsl } from "@/lib/color-utils";
+
+const DEFAULT_PRIMARY = "263 81% 58%";
+const DEFAULT_PRIMARY_HOVER = "263 75% 50%";
+
+function setLoginPageTheme(primaryHsl: string) {
+  const root = document.documentElement;
+  root.style.setProperty("--primary", primaryHsl);
+  root.style.setProperty("--primary-hover", darkenHsl(primaryHsl, 8));
+  root.style.setProperty("--glow-primary", `0 0 12px hsl(${primaryHsl} / 0.25)`);
+}
+
+function resetLoginPageTheme() {
+  const root = document.documentElement;
+  root.style.setProperty("--primary", DEFAULT_PRIMARY);
+  root.style.setProperty("--primary-hover", DEFAULT_PRIMARY_HOVER);
+  root.style.setProperty("--glow-primary", `0 0 12px hsl(${DEFAULT_PRIMARY} / 0.25)`);
+}
 
 export default function LoginPage() {
   const [apiKey, setApiKey] = useState("");
@@ -17,18 +35,39 @@ export default function LoginPage() {
   const [displayName, setDisplayName] = useState("Lite Adserver");
   const router = useRouter();
   const { login } = useAuth();
-  const { company } = useTenantSettings();
-  
-  // Update display name after mount to avoid hydration mismatch
+  const { company, primaryColor } = usePublicTenantSettings();
+
+  // Display name: public tenant company, or namespace-derived, or default
   useEffect(() => {
     if (company) {
       setDisplayName(company);
     } else {
       const namespace = getNamespace();
       if (namespace) {
-        setDisplayName(namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase());
+        setDisplayName(
+          namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase()
+        );
+      } else {
+        setDisplayName("Lite Adserver");
       }
     }
+  }, [company]);
+
+  // Apply tenant primary color on login page; reset on unmount
+  useEffect(() => {
+    if (primaryColor) {
+      setLoginPageTheme(primaryColor);
+    }
+    return () => resetLoginPageTheme();
+  }, [primaryColor]);
+
+  // Dynamic document title: "Company – Login" when tenant is loaded
+  useEffect(() => {
+    const title = company ? `${company} – Login` : "Login";
+    document.title = title;
+    return () => {
+      document.title = "Adserver Dashboard";
+    };
   }, [company]);
 
   // If already logged in, redirect to dashboard

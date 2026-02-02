@@ -86,6 +86,38 @@ export function getTenantDisplayName(): string {
   return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
 }
 
+/**
+ * Response shape for the public tenant endpoint (no auth).
+ */
+export interface PublicTenantResponse {
+  company: string;
+  primary_color: string;
+  secondary_color: string;
+}
+
+/**
+ * Fetch public tenant settings (no auth). Used e.g. on the login page to customise branding.
+ * Sends X-Namespace when available; backend returns company and theme colors.
+ */
+export async function fetchPublicTenant(): Promise<PublicTenantResponse> {
+  const baseUrl = getApiUrl();
+  const namespace = getNamespace();
+  const url = `${baseUrl}/api/public/tenant`;
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (namespace) {
+    headers["X-Namespace"] = namespace;
+  }
+  const res = await fetch(url, { method: "GET", headers });
+  if (!res.ok) {
+    throw new Error(
+      res.status === 404 ? "Tenant not found" : `Failed to load tenant (${res.status})`
+    );
+  }
+  return res.json() as Promise<PublicTenantResponse>;
+}
+
 export class ApiClient {
   private baseUrl: string;
   private headers: Record<string, string>;

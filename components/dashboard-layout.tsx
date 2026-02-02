@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, BarChart3, Layers, Users, ChevronDown, Settings, LogOut } from "lucide-react";
+import { Menu, X, Home, BarChart3, Layers, Users, ChevronDown, Settings, LogOut, CircleUser, CreditCard, UserPlus, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/components/auth-provider";
+import { TenantDocumentTitle } from "@/components/tenant-document-title";
 import { useTenantSettings } from "@/lib/use-tenant-settings";
 import { getNamespace } from "@/lib/api";
 
@@ -26,7 +27,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [accountDropdownMounted, setAccountDropdownMounted] = useState(false);
   const pathname = usePathname();
   const { logout } = useAuth();
-  const { company } = useTenantSettings();
+  const { company, email } = useTenantSettings();
 
   useEffect(() => setAccountDropdownMounted(true), []);
 
@@ -62,6 +63,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-background">
+      <TenantDocumentTitle />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -129,15 +131,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="ml-auto flex items-center">
               {!accountDropdownMounted ? (
                 <Button variant="ghost" size="sm" className="gap-1.5">
-                  Account
-                  <ChevronDown className="h-4 w-4 opacity-70" />
+                  <CircleUser className="h-4 w-4 shrink-0" />
+                  <span className="max-w-[140px] truncate sm:max-w-[200px]">Account</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                 </Button>
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1.5">
-                      Account
-                      <ChevronDown className="h-4 w-4 opacity-70" />
+                      <CircleUser className="h-4 w-4 shrink-0" />
+                      <span className="max-w-[140px] truncate sm:max-w-[200px]" title={email ?? undefined}>
+                        {email ?? "Account"}
+                      </span>
+                      <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
@@ -147,9 +153,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         Platform Settings
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/billing" className="flex items-center gap-2 cursor-pointer">
+                        <CreditCard className="h-4 w-4" />
+                        Billing
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/team" className="flex items-center gap-2 cursor-pointer">
+                        <UserPlus className="h-4 w-4" />
+                        Team
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/api" className="flex items-center gap-2 cursor-pointer">
+                        <Key className="h-4 w-4" />
+                        API
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={handleSignOut}
-                      className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive"
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign out
