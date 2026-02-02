@@ -85,6 +85,7 @@ export interface CampaignStats {
   clicks: number;
   unsold: number;
   fallbacks: number;
+  conversions: number;
 }
 
 export interface StatsResponse {

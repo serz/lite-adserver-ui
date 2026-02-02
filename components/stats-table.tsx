@@ -34,6 +34,7 @@ type StatItem = {
   clicks: number;
   unsold: number;
   fallbacks: number;
+  conversions: number;
 };
 
 export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTableProps) {
@@ -108,6 +109,7 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTa
             <TableHead className="text-right">Fallbacks</TableHead>
             <TableHead className="text-right">Unsold</TableHead>
             <TableHead className="text-right">Clicks</TableHead>
+            <TableHead className="text-right">Conversions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -118,6 +120,7 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTa
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.fallbacks)}</TableCell>
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.unsold)}</TableCell>
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.clicks)}</TableCell>
+              <TableCell className="text-right">{new Intl.NumberFormat().format(item.conversions)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
