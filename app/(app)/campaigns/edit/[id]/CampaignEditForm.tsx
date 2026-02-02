@@ -26,6 +26,7 @@ import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { api } from "@/lib/api";
 import { CountrySelector } from "@/components/country-selector";
 import { ZoneSelector } from "@/components/zone-selector";
+import { RedirectUrlHelp } from "@/components/redirect-url-help";
 import { BrowserSelector } from '@/components/browser-selector';
 import { OsSelector } from '@/components/os-selector';
 
@@ -657,9 +658,7 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
                 {redirectUrlError && (
                   <p className="text-xs text-destructive">{redirectUrlError}</p>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  Users will be redirected to this URL when they click on your ad
-                </p>
+                <RedirectUrlHelp />
               </div>
               
               <div className="grid gap-4 md:grid-cols-2">
