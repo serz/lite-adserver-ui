@@ -108,7 +108,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             );
           })}
         </nav>
-        <div className="absolute bottom-4 w-full px-4 flex items-center justify-center">
+        <div className="absolute bottom-4 w-full px-4 flex items-center">
           <ThemeToggle />
         </div>
       </div>
