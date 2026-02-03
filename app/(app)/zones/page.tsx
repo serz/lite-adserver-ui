@@ -10,6 +10,7 @@ import { ZoneDialog } from '@/components/zone-dialog';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Pencil, Power, Code, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -44,6 +45,7 @@ export default function ZonesPage() {
   const hasInitiallyFetchedRef = useRef(false);
   const { toast } = useToast();
   const [copiedZoneId, setCopiedZoneId] = useState<number | string | null>(null);
+  const [embedSubIdByZone, setEmbedSubIdByZone] = useState<Record<string, string>>({});
 
   const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
     if (!hasInitiallyFetchedRef.current || forceFetch) {
@@ -131,8 +133,14 @@ export default function ZonesPage() {
     return `${idStr.slice(0, 2)}...${idStr.slice(-2)}`;
   };
 
-  const handleCopyCode = (zoneId: number | string) => {
-    navigator.clipboard.writeText(getServeUrl(zoneId)).then(() => {
+  const getEmbedUrl = (zoneId: number | string, subId: string) => {
+    const base = getServeUrl(zoneId);
+    if (!subId.trim()) return base;
+    return `${base}?sub_id=${encodeURIComponent(subId.trim())}`;
+  };
+
+  const handleCopyCode = (zoneId: number | string, url: string) => {
+    navigator.clipboard.writeText(url).then(() => {
       toast({ title: "Copied!", description: "Embed URL copied to clipboard" });
       setCopiedZoneId(zoneId);
       setTimeout(() => setCopiedZoneId(null), 2000);
@@ -226,11 +234,24 @@ export default function ZonesPage() {
                           <DialogHeader>
                             <DialogTitle>Zone Embed URL</DialogTitle>
                           </DialogHeader>
-                          <div className="mt-4 flex items-center p-2 bg-muted rounded-md overflow-auto">
-                            <code className="text-sm flex-1">{getServeUrl(zone.id)}</code>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 ml-2" onClick={() => handleCopyCode(zone.id)} title="Copy to clipboard">
-                              {copiedZoneId === zone.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                            </Button>
+                          <div className="mt-4 space-y-3">
+                            <div className="flex items-center p-2 bg-muted rounded-md overflow-auto">
+                              <code className="text-sm flex-1 break-all">{getEmbedUrl(zone.id, embedSubIdByZone[String(zone.id)] ?? '')}</code>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0 ml-2" onClick={() => handleCopyCode(zone.id, getEmbedUrl(zone.id, embedSubIdByZone[String(zone.id)] ?? ''))} title="Copy to clipboard">
+                                {copiedZoneId === zone.id ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                              </Button>
+                            </div>
+                            <div>
+                              <label htmlFor={`sub-id-${zone.id}`} className="text-xs text-muted-foreground">Sub ID</label>
+                              <Input
+                                id={`sub-id-${zone.id}`}
+                                type="text"
+                                placeholder="Optional"
+                                value={embedSubIdByZone[String(zone.id)] ?? ''}
+                                onChange={(e) => setEmbedSubIdByZone(prev => ({ ...prev, [String(zone.id)]: e.target.value }))}
+                                className="mt-1"
+                              />
+                            </div>
                           </div>
                         </DialogContent>
                       </Dialog>
