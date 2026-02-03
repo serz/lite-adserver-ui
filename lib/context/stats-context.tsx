@@ -1,12 +1,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getLast7DaysImpressions, getLast7DaysClicks, getSyncState } from '@/lib/services/stats';
+import { getLast7DaysMetrics, getSyncState } from '@/lib/services/stats';
 import { useAuth } from '@/components/auth-provider';
+import { useTenantSettings } from '@/lib/use-tenant-settings';
 
 interface StatsContextType {
   impressions: number;
   clicks: number;
+  conversions: number;
   campaignsCount: number;
   zonesCount: number;
   isLoading: boolean;
@@ -19,17 +21,24 @@ const StatsContext = createContext<StatsContextType | undefined>(undefined);
 export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [impressions, setImpressions] = useState(0);
   const [clicks, setClicks] = useState(0);
+  const [conversions, setConversions] = useState(0);
   const [campaignsCount, setCampaignsCount] = useState(0);
   const [zonesCount, setZonesCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
+  const { isLoading: tenantSettingsLoading } = useTenantSettings();
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
   const fetchStats = useCallback(async () => {
     if (!isAuthReady || !isAuthenticated || !apiInitialized) {
       console.log('Stats context: Auth not ready, not authenticated, or API not initialized');
+      return;
+    }
+    // Wait for tenant settings so getTimezone() is correct and "from" is 00:00 7 days ago in tenant TZ
+    if (tenantSettingsLoading) {
+      console.log('Stats context: Waiting for tenant settings (timezone)');
       return;
     }
     
@@ -49,18 +58,17 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      const [impressionsData, clicksData, syncState] = await Promise.all([
-        getLast7DaysImpressions(),
-        getLast7DaysClicks(),
+      const [metrics, syncState] = await Promise.all([
+        getLast7DaysMetrics(),
         getSyncState()
       ]);
       
-      console.log('Stats context: Received impressions:', impressionsData);
-      console.log('Stats context: Received clicks:', clicksData);
+      console.log('Stats context: Received metrics:', metrics);
       console.log('Stats context: Received sync state:', syncState);
       
-      setImpressions(impressionsData);
-      setClicks(clicksData);
+      setImpressions(metrics.impressions);
+      setClicks(metrics.clicks);
+      setConversions(metrics.conversions);
       setCampaignsCount(syncState.campaigns.count);
       setZonesCount(syncState.zones.count);
       
@@ -93,13 +101,13 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading]);
 
   useEffect(() => {
-    if (isAuthReady && isAuthenticated && apiInitialized) {
+    if (isAuthReady && isAuthenticated && apiInitialized && !tenantSettingsLoading) {
       fetchStats();
     }
-  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized]);
+  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading]);
 
   const refetchStats = useCallback(async () => {
     dataFetchedRef.current = false;
@@ -112,6 +120,7 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       value={{
         impressions,
         clicks,
+        conversions,
         campaignsCount,
         zonesCount,
         isLoading,

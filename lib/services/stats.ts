@@ -286,6 +286,34 @@ export async function getLast7DaysClicks(): Promise<number> {
 }
 
 /**
+ * Get total conversions for the last 7 days
+ */
+export async function getLast7DaysConversions(): Promise<number> {
+  try {
+    const response = await getLast7DaysStats();
+    return response.stats.reduce((total, stat) => total + stat.conversions, 0);
+  } catch (error) {
+    return 0;
+  }
+}
+
+/**
+ * Get impressions, clicks and conversions for the last 7 days in a single API call.
+ */
+export async function getLast7DaysMetrics(): Promise<{
+  impressions: number;
+  clicks: number;
+  conversions: number;
+}> {
+  const response = await getLast7DaysStats();
+  return {
+    impressions: response.stats.reduce((total, stat) => total + stat.impressions, 0),
+    clicks: response.stats.reduce((total, stat) => total + stat.clicks, 0),
+    conversions: response.stats.reduce((total, stat) => total + stat.conversions, 0),
+  };
+}
+
+/**
  * Get current system state (campaign/zone counts)
  */
 export async function getSyncState(): Promise<SyncStateResponse> {
