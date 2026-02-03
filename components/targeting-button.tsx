@@ -10,6 +10,7 @@ interface TargetingButtonProps {
   disabled?: boolean;
   children: ReactNode;
   indicator?: 'green' | 'red';
+  className?: string;
 }
 
 export function TargetingButton({
@@ -17,7 +18,8 @@ export function TargetingButton({
   onClick,
   disabled = false,
   children,
-  indicator
+  indicator,
+  className
 }: TargetingButtonProps) {
   return (
     <button
@@ -29,7 +31,8 @@ export function TargetingButton({
         }),
         "data-[state=on]:bg-accent data-[state=on]:text-accent-foreground",
         active && "data-[state=on]:bg-accent",
-        "flex items-center gap-2"
+        "flex items-center gap-2",
+        className
       )}
       onClick={onClick}
       disabled={disabled}

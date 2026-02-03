@@ -17,6 +17,8 @@ export interface Campaign {
   created_at: number; // timestamp in milliseconds
   updated_at: number; // timestamp in milliseconds
   targeting_rules?: TargetingRule[]; // Optional targeting rules
+  payment_model?: 'cpm' | 'cpa';
+  rate?: number | null;
 }
 
 export interface CampaignsResponse {

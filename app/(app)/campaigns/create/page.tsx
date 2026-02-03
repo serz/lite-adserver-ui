@@ -26,6 +26,7 @@ import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { CountrySelector } from "@/components/country-selector";
 import { ZoneSelector } from "@/components/zone-selector";
 import { RedirectUrlHelp } from "@/components/redirect-url-help";
+import { TargetingButton } from "@/components/targeting-button";
 import { BrowserSelector } from '@/components/browser-selector';
 import { OsSelector } from '@/components/os-selector';
 
@@ -46,6 +47,10 @@ export default function CreateCampaignPage() {
   
   // Device targeting state
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
+  
+  // Payment: model (CPM/CPA) and rate for CPA
+  const [pricingType, setPricingType] = useState<'cpm' | 'cpa'>('cpm');
+  const [rate, setRate] = useState<string>("");
   
   // Country targeting state
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -351,7 +356,9 @@ export default function CreateCampaignPage() {
         redirect_url: redirectUrl.trim(),
         start_date: startDate ? startDate.getTime() : Date.now(),
         end_date: endDate ? endDate.getTime() : null,
-        targeting_rules: targetingRules.length > 0 ? targetingRules : undefined
+        targeting_rules: targetingRules.length > 0 ? targetingRules : undefined,
+        payment_model: pricingType,
+        rate: parseFloat(rate) || null
       };
       
       // Create campaign
@@ -391,22 +398,63 @@ export default function CreateCampaignPage() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Basic Information</h2>
             
-            <div className="space-y-2">
-              <Label htmlFor="name">Campaign Name</Label>
-              <Input 
-                id="name"
-                placeholder="Summer Promotion" 
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isLoading}
-              />
-              {nameError && (
-                <p className="text-xs text-destructive">{nameError}</p>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">
+                  Campaign Name <span className="text-destructive">*</span>
+                </Label>
+                <Input 
+                  id="name"
+                  placeholder="Summer Promotion" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isLoading}
+                />
+                {nameError && (
+                  <p className="text-xs text-destructive">{nameError}</p>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Payment</Label>
+                <div className="grid grid-cols-4 gap-2 items-center pt-0.5">
+                  <TargetingButton
+                    active={pricingType === "cpm"}
+                    onClick={() => setPricingType("cpm")}
+                    disabled={isLoading}
+                    indicator="green"
+                    className="w-full"
+                  >
+                    CPM
+                  </TargetingButton>
+                  <TargetingButton
+                    active={pricingType === "cpa"}
+                    onClick={() => setPricingType("cpa")}
+                    disabled={isLoading}
+                    indicator="green"
+                    className="w-full"
+                  >
+                    CPA
+                  </TargetingButton>
+                  <Input
+                    id="rate"
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    placeholder={pricingType === "cpm" ? "Rate per 1000 visits" : "Rate per action"}
+                    value={rate}
+                    onChange={(e) => setRate(e.target.value)}
+                    disabled={isLoading}
+                    className="col-span-2"
+                  />
+                </div>
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="redirect_url">Redirect URL</Label>
+              <Label htmlFor="redirect_url">
+                Redirect URL <span className="text-destructive">*</span>
+              </Label>
               <Input 
                 id="redirect_url"
                 placeholder="https://example.com/landing-page" 

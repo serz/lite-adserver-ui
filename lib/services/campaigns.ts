@@ -141,6 +141,8 @@ export async function createCampaign(campaignData: {
   end_date?: number | null; // timestamp in milliseconds
   status?: 'active' | 'paused';
   targeting_rules?: TargetingRule[];
+  payment_model?: 'cpm' | 'cpa';
+  rate?: number | null;
 }): Promise<Campaign> {
   try {
     const response = await api.post<{ campaign: Campaign }>('/api/campaigns', campaignData);
@@ -168,6 +170,8 @@ export async function updateCampaign(
     end_date?: number | null; // timestamp in milliseconds
     status?: 'active' | 'paused' | 'completed';
     targeting_rules?: TargetingRule[];
+    payment_model?: 'cpm' | 'cpa';
+    rate?: number | null;
   }
 ): Promise<Campaign> {
   try {
