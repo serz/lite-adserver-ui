@@ -152,6 +152,14 @@ export async function createCampaign(campaignData: {
       delete cache[key as keyof CampaignCache];
     });
     
+    // Sync newly created campaign to KV storage
+    try {
+      await syncCampaign(response.campaign.id);
+    } catch (syncError) {
+      console.error(`Failed to sync new campaign ${response.campaign.id}:`, syncError);
+      // Don't rethrow, as the campaign creation was successful
+    }
+    
     return response.campaign;
   } catch (error) {
     throw error;
@@ -182,14 +190,12 @@ export async function updateCampaign(
       delete cache[key as keyof CampaignCache];
     });
     
-    // If status is being changed, trigger sync to KV storage
-    if (campaignData.status !== undefined) {
-      try {
-        await syncCampaign(id);
-      } catch (syncError) {
-        console.error(`Failed to sync campaign ${id} after status update:`, syncError);
-        // Don't rethrow, as the campaign update was successful
-      }
+    // Sync campaign to KV storage after any update (status, name, dates, etc.)
+    try {
+      await syncCampaign(id);
+    } catch (syncError) {
+      console.error(`Failed to sync campaign ${id} after update:`, syncError);
+      // Don't rethrow, as the campaign update was successful
     }
     
     return response.campaign;

@@ -193,14 +193,12 @@ export async function updateZone(
       delete cache[key as keyof ZoneCache];
     });
     
-    // If status is being changed, trigger sync to KV storage
-    if (zoneData.status !== undefined) {
-      try {
-        await syncZone(id);
-      } catch (syncError) {
-        console.error(`Failed to sync zone ${id} after status update:`, syncError);
-        // Don't rethrow, as the zone update was successful
-      }
+    // Sync zone to KV storage after any update (status, name, URLs, etc.)
+    try {
+      await syncZone(id);
+    } catch (syncError) {
+      console.error(`Failed to sync zone ${id} after update:`, syncError);
+      // Don't rethrow, as the zone update was successful
     }
     
     return response.zone;
