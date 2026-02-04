@@ -145,7 +145,7 @@ export async function createCampaign(campaignData: {
   rate?: number | null;
 }): Promise<Campaign> {
   try {
-    const response = await api.post<{ campaign: Campaign }>('/api/campaigns', campaignData);
+    const response = await api.post<Campaign>('/api/campaigns', campaignData);
     
     // Invalidate all cache after creating a new campaign
     Object.keys(cache).forEach(key => {
@@ -154,13 +154,13 @@ export async function createCampaign(campaignData: {
     
     // Sync newly created campaign to KV storage
     try {
-      await syncCampaign(response.campaign.id);
+      await syncCampaign(response.id);
     } catch (syncError) {
-      console.error(`Failed to sync new campaign ${response.campaign.id}:`, syncError);
+      console.error(`Failed to sync new campaign ${response.id}:`, syncError);
       // Don't rethrow, as the campaign creation was successful
     }
     
-    return response.campaign;
+    return response;
   } catch (error) {
     throw error;
   }
@@ -183,7 +183,7 @@ export async function updateCampaign(
   }
 ): Promise<Campaign> {
   try {
-    const response = await api.put<{ campaign: Campaign }>(`/api/campaigns/${id}`, campaignData);
+    const response = await api.put<Campaign>(`/api/campaigns/${id}`, campaignData);
     
     // Invalidate all cache after updating a campaign
     Object.keys(cache).forEach(key => {
@@ -198,7 +198,7 @@ export async function updateCampaign(
       // Don't rethrow, as the campaign update was successful
     }
     
-    return response.campaign;
+    return response;
   } catch (error) {
     throw error;
   }
