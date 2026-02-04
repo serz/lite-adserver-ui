@@ -12,6 +12,7 @@ import { TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { getTimezone, getUtcMsForStartOfDayInTimezone, getUtcMsForEndOfDayInTimezone } from "@/lib/timezone";
 import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -350,12 +351,17 @@ export default function CreateCampaignPage() {
     setIsLoading(true);
     
     try {
-      // Prepare data
+      // Prepare data: start/end as 00:00 and end-of-day in tenant timezone (sent as UTC ms)
+      const tz = getTimezone();
       const campaignData = {
         name: name.trim(),
         redirect_url: redirectUrl.trim(),
-        start_date: startDate ? startDate.getTime() : Date.now(),
-        end_date: endDate ? endDate.getTime() : null,
+        start_date: startDate
+          ? getUtcMsForStartOfDayInTimezone(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), tz)
+          : Date.now(),
+        end_date: endDate
+          ? getUtcMsForEndOfDayInTimezone(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), tz)
+          : null,
         targeting_rules: targetingRules.length > 0 ? targetingRules : undefined,
         payment_model: pricingType,
         rate: parseFloat(rate) || null

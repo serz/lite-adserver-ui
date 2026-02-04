@@ -98,4 +98,18 @@ export interface StatsResponse {
     from: number;
     to: number;
   };
+}
+
+// Conversion types (audit/detailed conversion events)
+export interface Conversion {
+  ad_event_id: string;
+  namespace: string;
+  click_id: string;
+  payload: string;
+  created_at: number; // Unix timestamp (seconds)
+}
+
+export interface ConversionsResponse {
+  conversions: Conversion[];
+  pagination: PaginationData;
 } 

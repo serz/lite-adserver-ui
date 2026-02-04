@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, BarChart3, Layers, Users, ChevronDown, Settings, LogOut, CircleUser, CreditCard, UserPlus, Key } from "lucide-react";
+import { Menu, X, Home, BarChart3, Layers, Users, ChevronDown, Settings, LogOut, CircleUser, CreditCard, UserPlus, Key, MousePointerClick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -54,6 +54,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Campaigns", href: "/campaigns", icon: Layers },
     { name: "Zones", href: "/zones", icon: Users },
     { name: "Statistics", href: "/stats", icon: BarChart3 },
+    { name: "Conversions", href: "/conversions", icon: MousePointerClick },
   ];
 
   const handleSignOut = (e: React.MouseEvent) => {
