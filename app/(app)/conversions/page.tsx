@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useState, useEffect, useRef } from "react";
+import React, { useCallback, useState, useEffect, useRef } from "react";
 import { getConversions } from "@/lib/services/conversions";
 import { Conversion } from "@/types/api";
-import { formatDateTime } from "@/lib/date-utils";
+import { formatDateTime, FORMAT_DATETIME_24H } from "@/lib/date-utils";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, ChevronRight, ChevronDown } from "lucide-react";
 import {
   Pagination,
   PaginationContent,
@@ -31,7 +31,27 @@ export default function ConversionsPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [sort, setSort] = useState<"ad_event_id" | "click_id" | "created_at">("created_at");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const hasInitiallyFetchedRef = useRef(false);
+
+  const toggleRowExpansion = (index: number) => {
+    setExpandedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
+  const formatPayload = (payload: string): string => {
+    if (!payload) return "—";
+    try {
+      const parsed = JSON.parse(payload);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return payload;
+    }
+  };
 
   const fetchConversions = useCallback(
     async (forceFetch = false, page = currentPage) => {
@@ -154,14 +174,12 @@ export default function ConversionsPage() {
             <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b">
+                  <th className="w-10 px-2 py-3 text-left text-sm font-medium text-muted-foreground" aria-label="Expand" />
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Ad event ID
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Click ID
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-                    Payload
                   </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Created
@@ -170,23 +188,48 @@ export default function ConversionsPage() {
               </thead>
               <tbody>
                 {conversions.map((c, idx) => (
-                  <tr
-                    key={`${c.ad_event_id}-${c.created_at}-${idx}`}
-                    className="border-b last:border-0 hover:bg-muted/50"
-                  >
-                    <td className="px-4 py-3 font-mono text-sm tabular-nums">
-                      {c.ad_event_id}
-                    </td>
-                    <td className="px-4 py-3 font-mono text-sm tabular-nums">
-                      {c.click_id}
-                    </td>
-                    <td className="max-w-[280px] truncate px-4 py-3 text-sm text-muted-foreground" title={c.payload}>
-                      {c.payload || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">
-                      {formatDateTime(toMs(c.created_at))}
-                    </td>
-                  </tr>
+                  <React.Fragment key={`${c.ad_event_id}-${c.created_at}-${idx}`}>
+                    <tr
+                      className="border-b last:border-0 hover:bg-muted/50"
+                    >
+                      <td className="w-10 px-2 py-3">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => toggleRowExpansion(idx)}
+                          aria-label={expandedRows.has(idx) ? "Collapse row" : "Expand row"}
+                        >
+                          {expandedRows.has(idx) ? (
+                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-sm tabular-nums">
+                        {c.ad_event_id}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-sm tabular-nums">
+                        {c.click_id}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                        {formatDateTime(toMs(c.created_at), { format: FORMAT_DATETIME_24H })}
+                      </td>
+                    </tr>
+                    {expandedRows.has(idx) && (
+                      <tr className="bg-muted/20 border-b">
+                        <td colSpan={4} className="px-6 py-4">
+                          <div className="border-l-2 border-primary/50 pl-4">
+                            <h4 className="text-sm font-medium mb-2">Payload</h4>
+                            <pre className="text-sm text-muted-foreground whitespace-pre-wrap break-words font-mono rounded-md bg-muted/50 p-3 overflow-x-auto">
+                              {formatPayload(c.payload)}
+                            </pre>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

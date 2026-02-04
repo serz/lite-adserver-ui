@@ -50,4 +50,7 @@ export function formatDateTime(
   }
 
   return format(dateObj, options.format || 'MMM dd, yyyy h:mm a');
-} 
+}
+
+/** 24h datetime format: e.g. "Feb 02, 2026 15:15" */
+export const FORMAT_DATETIME_24H = 'MMM dd, yyyy HH:mm'; 
