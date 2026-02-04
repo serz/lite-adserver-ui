@@ -1,44 +1,9 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { Copy, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { getApiUrl } from "@/lib/api";
-import { useToast } from "@/hooks/use-toast";
+import { CopyableChip } from "@/components/ui/copyable-chip";
 
 const MACROS = ["{click_id}", "{zone_id}", "{aff_sub_id}"] as const;
-
-function CopyableChip({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      toast({ title: "Copied", description: `${text} copied to clipboard` });
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }, [text, toast]);
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className={cn(
-        "inline-flex items-center gap-1 rounded-md border border-input bg-muted/50 px-2 py-1 text-xs font-mono transition-colors hover:bg-muted",
-        copied && "border-primary/50 bg-primary/10"
-      )}
-      title="Copy"
-    >
-      <span>{text}</span>
-      {copied ? (
-        <Check className="h-3 w-3 text-green-600" aria-hidden />
-      ) : (
-        <Copy className="h-3 w-3 text-muted-foreground" aria-hidden />
-      )}
-    </button>
-  );
-}
 
 /**
  * Shared conversion tracking info: supported macros, postback URL, optional query params, optimization.
@@ -52,7 +17,7 @@ export function ConversionTrackingSection() {
     <div className="rounded-md border border-border bg-muted/30 p-3 space-y-3 text-xs text-muted-foreground">
       <div>
         <p className="font-medium text-foreground mb-1.5">Supported macros</p>
-        <p className="mb-2">Add these to your redirect URL; they will be replaced when the user clicks:</p>
+        <p className="mb-2">Add these macros to your redirect URL — they will be automatically replaced when a user clicks your ad:</p>
         <div className="flex flex-wrap gap-2">
           {MACROS.map((macro) => (
             <CopyableChip key={macro} text={macro} />
@@ -62,14 +27,14 @@ export function ConversionTrackingSection() {
       <div>
         <p className="font-medium text-foreground mb-1.5">Conversion tracking</p>
         <p className="mb-1.5">
-          Include <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{"{click_id}"}</code> in your
+          To track conversions, include <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">{"{click_id}"}</code> in your
           redirect URL. When a conversion happens (e.g. signup, purchase), send a request to:
         </p>
         <code className="block rounded bg-muted p-2 font-mono text-[11px] break-all">
           {postbackUrl}
         </code>
         <p className="mt-1.5">
-          You can add query parameters to store conversion details (e.g.{" "}
+          You may pass additional parameters to record conversion details (e.g.{" "}
           <code className="rounded bg-muted px-1 py-0.5 font-mono text-[11px]">
             ?payout=5&type=deposit
           </code>
@@ -78,6 +43,11 @@ export function ConversionTrackingSection() {
             {postbackUrl}?payout=5&type=deposit
           </code>
         </p>
+        <div className="mt-2 rounded bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 px-2 py-1.5">
+          <p className="text-blue-900 dark:text-blue-200">
+            <strong>Note:</strong> Affset uses click-based (post-click) attribution. Conversions are attributed at the time of the original click, not at the time the conversion occurs.
+          </p>
+        </div>
       </div>
       <div>
         <p className="font-medium text-foreground mb-1">Optimization</p>

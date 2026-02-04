@@ -132,6 +132,7 @@ export async function createZone(zoneData: {
   name: string;
   site_url?: string;
   traffic_back_url?: string;
+  postback_url?: string;
 }): Promise<Zone> {
   const response = await api.post<{ zone?: Zone } & Partial<Zone>>('/api/zones', zoneData);
   
@@ -151,6 +152,7 @@ export async function createZone(zoneData: {
     name: raw.name ?? zoneData.name,
     site_url: raw.site_url ?? zoneData.site_url ?? '',
     traffic_back_url: raw.traffic_back_url ?? zoneData.traffic_back_url ?? '',
+    postback_url: raw.postback_url ?? zoneData.postback_url,
     status: raw.status ?? 'active',
     created_at: raw.created_at ?? Date.now(),
     updated_at: raw.updated_at ?? raw.created_at ?? Date.now(),
@@ -182,6 +184,7 @@ export async function updateZone(
     name?: string;
     site_url?: string;
     traffic_back_url?: string;
+    postback_url?: string;
     status?: 'active' | 'inactive';
   }
 ): Promise<Zone> {

@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Zone } from "@/types/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CopyableChip } from "@/components/ui/copyable-chip";
 
 interface ZoneDialogProps {
   children?: React.ReactNode;
@@ -47,11 +48,13 @@ export function ZoneDialog({
   const [name, setName] = useState("");
   const [siteUrl, setSiteUrl] = useState("");
   const [trafficBackUrl, setTrafficBackUrl] = useState("");
+  const [postbackUrl, setPostbackUrl] = useState("");
   
   // Field errors
   const [nameError, setNameError] = useState<string | null>(null);
   const [siteUrlError, setSiteUrlError] = useState<string | null>(null);
   const [trafficBackUrlError, setTrafficBackUrlError] = useState<string | null>(null);
+  const [postbackUrlError, setPostbackUrlError] = useState<string | null>(null);
   
   // Fetch zone data when editing
   useEffect(() => {
@@ -75,6 +78,7 @@ export function ZoneDialog({
           setName(zone.name || '');
           setSiteUrl(zone.site_url || '');
           setTrafficBackUrl(zone.traffic_back_url || '');
+          setPostbackUrl(zone.postback_url || '');
         } catch (error) {
           console.error('Error fetching zone data:', error);
           setFormError("Failed to load zone data. Please try again.");
@@ -95,6 +99,7 @@ export function ZoneDialog({
     setNameError(null);
     setSiteUrlError(null);
     setTrafficBackUrlError(null);
+    setPostbackUrlError(null);
     
     // Validate name
     if (!name.trim()) {
@@ -128,6 +133,16 @@ export function ZoneDialog({
       }
     }
     
+    // Validate postback URL if provided
+    if (postbackUrl.trim()) {
+      try {
+        new URL(postbackUrl);
+      } catch (e) {
+        setPostbackUrlError("Please enter a valid URL");
+        isValid = false;
+      }
+    }
+    
     return isValid;
   };
 
@@ -136,9 +151,11 @@ export function ZoneDialog({
     setName("");
     setSiteUrl("");
     setTrafficBackUrl("");
+    setPostbackUrl("");
     setNameError(null);
     setSiteUrlError(null);
     setTrafficBackUrlError(null);
+    setPostbackUrlError(null);
     setFormError(null);
   };
 
@@ -163,6 +180,7 @@ export function ZoneDialog({
         name: zoneName,
         site_url: siteUrl.trim() || undefined,
         traffic_back_url: trafficBackUrl.trim() || undefined,
+        postback_url: postbackUrl.trim() || undefined,
       };
       
       let response: Zone;
@@ -303,6 +321,29 @@ export function ZoneDialog({
             <p className="text-xs text-muted-foreground">
               Fallback URL for traffic when no ads are available
             </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="postback_url">Conversion Postback URL (Optional)</Label>
+            <Input 
+              id="postback_url"
+              type="url"
+              placeholder="https://example.com/track?click_id={sub_id}" 
+              value={postbackUrl}
+              onChange={(e) => setPostbackUrl(e.target.value)}
+              disabled={isLoading}
+            />
+            {postbackUrlError && (
+              <p className="text-xs text-destructive">{postbackUrlError}</p>
+            )}
+            <div className="text-xs text-muted-foreground space-y-1">
+              <p>Use this to track which clicks led to conversions.</p>
+              <div className="flex items-center gap-2">
+                <span>Available macro:</span>
+                <CopyableChip text="{sub_id}" />
+                <span className="text-muted-foreground/70">- your click identifier</span>
+              </div>
+            </div>
           </div>
           
           <DialogFooter className="flex flex-row w-full gap-4">

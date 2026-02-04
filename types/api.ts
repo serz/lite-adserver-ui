@@ -38,6 +38,7 @@ export interface Zone {
   name: string;
   site_url: string;
   traffic_back_url: string;
+  postback_url?: string;
   status: 'active' | 'inactive';
   created_at: number;
   updated_at: number;
