@@ -246,6 +246,18 @@ export async function getCampaign(id: number, options?: {
 }
 
 /**
+ * Delete a campaign (only paused campaigns can be deleted)
+ */
+export async function deleteCampaign(id: number): Promise<void> {
+  await api.delete(`/api/campaigns/${id}`);
+
+  // Invalidate all cache after deleting a campaign
+  Object.keys(cache).forEach(key => {
+    delete cache[key as keyof CampaignCache];
+  });
+}
+
+/**
  * Get targeting rules for a campaign by ID
  */
 export async function getCampaignTargetingRules(campaignId: number): Promise<TargetingRule[]> {

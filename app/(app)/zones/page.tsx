@@ -1,19 +1,21 @@
 "use client";
 
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { getZones, updateZone } from '@/lib/services/zones';
+import { getZones, updateZone, deleteZone } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { getApiUrl } from '@/lib/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { ZoneDialog } from '@/components/zone-dialog';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Pencil, Power, Code, Copy, Check } from 'lucide-react';
+import { RefreshCw, Pencil, Power, Code, Copy, Check, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -46,6 +48,8 @@ export default function ZonesPage() {
   const { toast } = useToast();
   const [copiedZoneId, setCopiedZoneId] = useState<number | string | null>(null);
   const [embedSubIdByZone, setEmbedSubIdByZone] = useState<Record<string, string>>({});
+  const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
     if (!hasInitiallyFetchedRef.current || forceFetch) {
@@ -147,6 +151,38 @@ export default function ZonesPage() {
     }).catch(() => {
       toast({ title: "Error", description: "Failed to copy the embed URL", variant: "destructive" });
     });
+  };
+
+  const handleDeleteClick = (zone: Zone) => {
+    setZoneToDelete(zone);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!zoneToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteZone(zoneToDelete.id);
+      setZones(prev => prev.filter(z => z.id !== zoneToDelete.id));
+      setTotalItems(prev => Math.max(0, prev - 1));
+      setZoneToDelete(null);
+      toast({
+        title: "Zone deleted",
+        description: `"${zoneToDelete.name}" has been deleted.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete zone. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) setZoneToDelete(null);
   };
 
   return (
@@ -269,6 +305,17 @@ export default function ZonesPage() {
                       >
                         <Power className={`h-4 w-4 ${zone.status === 'active' ? 'text-green-500' : 'text-amber-500'}`} />
                       </Button>
+                      {zone.status === 'inactive' && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          title="Delete zone"
+                          onClick={() => handleDeleteClick(zone)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -303,6 +350,25 @@ export default function ZonesPage() {
               </div>
             </div>
           )}
+
+          <Dialog open={!!zoneToDelete} onOpenChange={(open) => !open && handleDeleteCancel()}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Delete zone</DialogTitle>
+                <DialogDescription>
+                  Are you sure you want to delete &quot;{zoneToDelete?.name}&quot;? This action cannot be undone.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button variant="outline" onClick={handleDeleteCancel} disabled={isDeleting}>
+                  Cancel
+                </Button>
+                <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
+                  {isDeleting ? 'Deleting…' : 'Delete'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>

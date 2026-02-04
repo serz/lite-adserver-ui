@@ -211,6 +211,18 @@ export async function updateZone(
 }
 
 /**
+ * Delete a zone (only inactive zones should be deleted).
+ * @param id - Zone ID (number or UUID string)
+ */
+export async function deleteZone(id: number | string): Promise<void> {
+  await api.delete(`/api/zones/${id}`);
+
+  Object.keys(cache).forEach(key => {
+    delete cache[key as keyof ZoneCache];
+  });
+}
+
+/**
  * Get a specific zone by ID
  * @param id - Zone ID (number or UUID string)
  */

@@ -1,12 +1,20 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { getCampaigns, updateCampaign, getCampaignTargetingRules } from '@/lib/services/campaigns';
+import { getCampaigns, updateCampaign, getCampaignTargetingRules, deleteCampaign } from '@/lib/services/campaigns';
 import { Campaign, TargetingRule, TargetingRuleType } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Play, Pause, Edit, ChevronRight, ChevronDown } from 'lucide-react';
+import { RefreshCw, Play, Pause, Edit, ChevronRight, ChevronDown, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
@@ -21,6 +29,8 @@ export default function CampaignsPage() {
   const [targetingRulesByCampaign, setTargetingRulesByCampaign] = useState<{[campaignId: number]: TargetingRule[]}>({});
   const [loadingTargetingRules, setLoadingTargetingRules] = useState<{[campaignId: number]: boolean}>({});
   const [targetingRuleTypes, setTargetingRuleTypes] = useState<TargetingRuleType[]>([]);
+  const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchCampaigns = useCallback(async (forceFetch = false) => {
     if (!hasInitiallyFetchedRef.current || forceFetch) {
@@ -127,6 +137,37 @@ export default function CampaignsPage() {
     return ruleType ? ruleType.name : `Rule Type ${ruleTypeId}`;
   };
 
+  const handleDeleteClick = (campaign: Campaign) => {
+    setCampaignToDelete(campaign);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!campaignToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteCampaign(campaignToDelete.id);
+      setCampaigns(prev => prev.filter(c => c.id !== campaignToDelete.id));
+      setCampaignToDelete(null);
+      toast({
+        title: "Campaign deleted",
+        description: `"${campaignToDelete.name}" has been deleted.`,
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete campaign. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) setCampaignToDelete(null);
+  };
+
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -231,6 +272,17 @@ export default function CampaignsPage() {
                             <Edit className="h-4 w-4" />
                           </Button>
                         </Link>
+                        {campaign.status === 'paused' && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            title="Delete campaign"
+                            onClick={() => handleDeleteClick(campaign)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -275,6 +327,25 @@ export default function CampaignsPage() {
           </table>
         </div>
       )}
+
+      <Dialog open={!!campaignToDelete} onOpenChange={(open) => !open && handleDeleteCancel()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete campaign</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete &quot;{campaignToDelete?.name}&quot;? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleDeleteCancel} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
+              {isDeleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
