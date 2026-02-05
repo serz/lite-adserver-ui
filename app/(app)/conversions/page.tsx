@@ -181,6 +181,12 @@ export default function ConversionsPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Click ID
                   </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                    Spend
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">
+                    Payout
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Created
                   </th>
@@ -213,13 +219,23 @@ export default function ConversionsPage() {
                       <td className="px-4 py-3 font-mono text-sm tabular-nums">
                         {c.click_id}
                       </td>
+                      <td className="px-4 py-3 text-right text-sm tabular-nums">
+                        {typeof c.spend === "number"
+                          ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(c.spend)
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm tabular-nums">
+                        {typeof c.payout === "number"
+                          ? new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(c.payout)
+                          : "—"}
+                      </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {formatDateTime(toMs(c.created_at), { format: FORMAT_DATETIME_24H })}
                       </td>
                     </tr>
                     {expandedRows.has(idx) && (
                       <tr className="bg-muted/20 border-b">
-                        <td colSpan={4} className="px-6 py-4">
+                        <td colSpan={6} className="px-6 py-4">
                           <div className="border-l-2 border-primary/50 pl-4">
                             <h4 className="text-sm font-medium mb-2">Payload</h4>
                             <pre className="text-sm text-muted-foreground whitespace-pre-wrap break-words font-mono rounded-md bg-muted/50 p-3 overflow-x-auto">

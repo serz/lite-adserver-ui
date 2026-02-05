@@ -106,6 +106,8 @@ export interface Conversion {
   namespace: string;
   click_id: string;
   payload: string;
+  spend?: number;
+  payout?: number;
   created_at: number; // Unix timestamp (seconds)
 }
 
