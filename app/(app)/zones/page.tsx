@@ -137,6 +137,13 @@ export default function ZonesPage() {
     return `${idStr.slice(0, 2)}...${idStr.slice(-2)}`;
   };
 
+  const getShortenedUrl = (url: string | null | undefined, start = 12, end = 6): string => {
+    if (!url || !url.trim()) return 'N/A';
+    const s = url.trim();
+    if (s.length <= start + end) return s;
+    return `${s.slice(0, start)}...${s.slice(-end)}`;
+  };
+
   const getEmbedUrl = (zoneId: number | string, subId: string) => {
     const base = getServeUrl(zoneId);
     if (!subId.trim()) return base;
@@ -235,6 +242,7 @@ export default function ZonesPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Site URL</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Traffic Back URL</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Postback URL</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Created</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Actions</th>
                 </tr>
@@ -256,8 +264,30 @@ export default function ZonesPage() {
                         {zone.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-sm">{zone.site_url || 'N/A'}</td>
-                    <td className="px-4 py-3 text-sm">{zone.traffic_back_url || 'N/A'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild><span className="font-mono text-xs">{getShortenedUrl(zone.site_url)}</span></TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs"><p className="font-mono text-xs break-all">{zone.site_url || 'N/A'}</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild><span className="font-mono text-xs">{getShortenedUrl(zone.traffic_back_url)}</span></TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs"><p className="font-mono text-xs break-all">{zone.traffic_back_url || 'N/A'}</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild><span className="font-mono text-xs">{getShortenedUrl(zone.postback_url)}</span></TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs"><p className="font-mono text-xs break-all">{zone.postback_url || 'N/A'}</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </td>
                     <td className="px-4 py-3 text-sm">{formatDate(zone.created_at)}</td>
                     <td className="px-4 py-3 text-sm flex items-center gap-1">
                       <Dialog>
