@@ -57,7 +57,8 @@ function getCalendarDateInTimezone(instant: Date, timeZone: string): { y: number
 }
 
 /**
- * Generate default date range for statistics (yesterday 00:00 to today 23:59:59 in profile timezone, as UTC).
+ * Generate default date range for statistics (yesterday 00:00 to today 00:00 in profile timezone).
+ * "to" is start of today so the date picker shows the correct calendar day without flipping.
  * @param timeZone Profile timezone (e.g. Europe/Riga). Defaults to getTimezone().
  */
 export function getDefaultDateRange(timeZone?: string): { from: Date; to: Date } {
@@ -72,7 +73,7 @@ export function getDefaultDateRange(timeZone?: string): { from: Date; to: Date }
     yesterdayDate.getDate(),
     tz
   );
-  const toMs = getUtcMsForEndOfDayInTimezone(today.y, today.m, today.d, tz);
+  const toMs = getUtcMsForStartOfDayInTimezone(today.y, today.m, today.d, tz);
 
   return {
     from: new Date(fromMs),
@@ -199,8 +200,7 @@ function isLast7DaysRange(from: number, to: number): boolean {
 
 /**
  * Get stats for a specific date range with additional filtering options.
- * from = selected "from" day at 00:00:00 in profile timezone (converted to UTC).
- * to = selected "to" day at 23:59:59 in profile timezone (converted to UTC).
+ * Dates are interpreted as calendar days in profile timezone: from = 00:00:00, to = 23:59:59.
  */
 export async function getStatsForPeriod(options: {
   from?: Date;
@@ -216,18 +216,11 @@ export async function getStatsForPeriod(options: {
   const fromDate = options.from ?? defaultRange.from;
   const toDate = options.to ?? defaultRange.to;
 
-  const fromMs = getUtcMsForStartOfDayInTimezone(
-    fromDate.getFullYear(),
-    fromDate.getMonth(),
-    fromDate.getDate(),
-    tz
-  );
-  const toMs = getUtcMsForEndOfDayInTimezone(
-    toDate.getFullYear(),
-    toDate.getMonth(),
-    toDate.getDate(),
-    tz
-  );
+  const fromCal = getCalendarDateInTimezone(fromDate, tz);
+  const toCal = getCalendarDateInTimezone(toDate, tz);
+
+  const fromMs = getUtcMsForStartOfDayInTimezone(fromCal.y, fromCal.m, fromCal.d, tz);
+  const toMs = getUtcMsForEndOfDayInTimezone(toCal.y, toCal.m, toCal.d, tz);
 
   return getStats({
     from: fromMs,

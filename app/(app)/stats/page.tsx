@@ -3,6 +3,7 @@
 import { StatsTable } from '@/components/stats-table';
 import { useStatsPage } from '@/lib/context/stats-page-context';
 import { useStats } from '@/lib/context/stats-context';
+import { useTenantSettings } from '@/lib/use-tenant-settings';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -30,6 +31,7 @@ export default function StatsPage() {
     refetch
   } = useStatsPage();
   const { zonesCount } = useStats();
+  const { timezone } = useTenantSettings();
 
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     if (range?.from) {
@@ -99,7 +101,14 @@ export default function StatsPage() {
             </div>
           </div>
         ) : (
-          <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} />
+          <>
+            <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} />
+            {timezone && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                All dates and daily totals above are shown in your account timezone ({timezone}).
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
