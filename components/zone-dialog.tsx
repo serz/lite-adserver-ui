@@ -338,10 +338,15 @@ export function ZoneDialog({
             )}
             <div className="text-xs text-muted-foreground space-y-1">
               <p>Use this to track which clicks led to conversions.</p>
-              <div className="flex items-center gap-2">
-                <span>Available macro:</span>
-                <CopyableChip text="{sub_id}" />
-                <span className="text-muted-foreground/70">- your click identifier</span>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <CopyableChip text="{sub_id}" />
+                  <span className="text-muted-foreground/70">— your click identifier</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CopyableChip text="{payout}" />
+                  <span className="text-muted-foreground/70">— amount the affiliate gets for the conversion</span>
+                </div>
               </div>
             </div>
           </div>
