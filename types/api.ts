@@ -90,6 +90,7 @@ export interface CampaignStats {
   fallbacks: number;
   conversions: number;
   spend: number;
+  payout: number;
 }
 
 export interface StatsResponse {
