@@ -114,4 +114,17 @@ export interface Conversion {
 export interface ConversionsResponse {
   conversions: Conversion[];
   pagination: PaginationData;
+}
+
+// Payout Rule types
+export interface PayoutRule {
+  id: number;
+  campaign_id: number;
+  zone_id: string | null;
+  payout: number;
+  created_at: number;
+}
+
+export interface PayoutRulesResponse {
+  payout_rules: PayoutRule[];
 } 

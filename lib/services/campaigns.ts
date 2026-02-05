@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { CampaignsResponse, Campaign, TargetingRule } from '@/types/api';
+import { CampaignsResponse, Campaign, TargetingRule, PayoutRule, PayoutRulesResponse } from '@/types/api';
 import { syncCampaign } from './sync';
 
 // In-memory cache for campaign data
@@ -266,6 +266,58 @@ export async function getCampaignTargetingRules(campaignId: number): Promise<Tar
     return response.targeting_rules;
   } catch (error) {
     console.error(`Error fetching targeting rules for campaign ${campaignId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get payout rules for a campaign by ID
+ */
+export async function getCampaignPayoutRules(campaignId: number): Promise<PayoutRule[]> {
+  try {
+    const response = await api.get<PayoutRulesResponse>(`/api/campaigns/${campaignId}/payout_rules`);
+    return response.payout_rules;
+  } catch (error) {
+    console.error(`Error fetching payout rules for campaign ${campaignId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Create a payout rule for a campaign
+ */
+export async function createPayoutRule(
+  campaignId: number,
+  payoutData: {
+    payout: number;
+    zone_id?: string | null;
+  }
+): Promise<PayoutRule> {
+  try {
+    const response = await api.post<PayoutRule>(`/api/campaigns/${campaignId}/payout_rules`, payoutData);
+    return response;
+  } catch (error) {
+    console.error(`Error creating payout rule for campaign ${campaignId}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Delete a payout rule for a campaign
+ * @param campaignId - Campaign ID
+ * @param zoneId - Zone UUID (optional, omit to delete global rule)
+ */
+export async function deletePayoutRule(
+  campaignId: number,
+  zoneId?: string | null
+): Promise<void> {
+  try {
+    const endpoint = zoneId 
+      ? `/api/campaigns/${campaignId}/payout_rules?zone_id=${zoneId}`
+      : `/api/campaigns/${campaignId}/payout_rules`;
+    await api.delete(endpoint);
+  } catch (error) {
+    console.error(`Error deleting payout rule for campaign ${campaignId}:`, error);
     throw error;
   }
 } 

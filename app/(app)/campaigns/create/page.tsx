@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { createCampaign } from "@/lib/services/campaigns";
+import { createCampaign, createPayoutRule } from "@/lib/services/campaigns";
 import { getZones } from "@/lib/services/zones";
 import { TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { getTimezone, getUtcMsForStartOfDayInTimezone, getUtcMsForEndOfDayInTimezone } from "@/lib/timezone";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -74,6 +74,12 @@ export default function CreateCampaignPage() {
   // Unique users targeting state
   const [uniqueUsersValue, setUniqueUsersValue] = useState<string>("");
   const [uniqueUsersRuleId, setUniqueUsersRuleId] = useState<number | null>(null);
+  
+  // Payout rules state
+  const [globalPayout, setGlobalPayout] = useState<string>("");
+  const [zonePayouts, setZonePayouts] = useState<Array<{zone_id: string, payout: string}>>([]);
+  const [selectedZoneForPayout, setSelectedZoneForPayout] = useState<string>("");
+  const [newZonePayout, setNewZonePayout] = useState<string>("");
   
   // Data for dropdowns
   const [zones, setZones] = useState<Zone[]>([]);
@@ -293,6 +299,32 @@ export default function CreateCampaignPage() {
     ]);
   }, [uniqueUsersValue, uniqueUsersRuleId]);
   
+  // Handle adding zone payout
+  const handleAddZonePayout = () => {
+    if (!selectedZoneForPayout || !newZonePayout) {
+      return;
+    }
+    
+    // Check if zone already has a payout rule
+    if (zonePayouts.some(zp => zp.zone_id === selectedZoneForPayout)) {
+      toast({
+        title: "Zone already has a payout rule",
+        description: "Please remove the existing rule first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setZonePayouts(prev => [...prev, { zone_id: selectedZoneForPayout, payout: newZonePayout }]);
+    setSelectedZoneForPayout("");
+    setNewZonePayout("");
+  };
+  
+  // Handle removing zone payout
+  const handleRemoveZonePayout = (zoneId: string) => {
+    setZonePayouts(prev => prev.filter(zp => zp.zone_id !== zoneId));
+  };
+  
   // Form validation
   const validateForm = () => {
     let isValid = true;
@@ -368,7 +400,36 @@ export default function CreateCampaignPage() {
       };
       
       // Create campaign
-      await createCampaign(campaignData);
+      const newCampaign = await createCampaign(campaignData);
+      
+      // Create payout rules if CPA and any payout is set
+      if (pricingType === 'cpa') {
+        try {
+          // Create global payout rule if set
+          if (globalPayout && parseFloat(globalPayout) > 0) {
+            await createPayoutRule(newCampaign.id, {
+              payout: parseFloat(globalPayout)
+            });
+          }
+          
+          // Create zone-specific payout rules
+          for (const zonePayout of zonePayouts) {
+            if (zonePayout.payout && parseFloat(zonePayout.payout) > 0) {
+              await createPayoutRule(newCampaign.id, {
+                payout: parseFloat(zonePayout.payout),
+                zone_id: zonePayout.zone_id
+              });
+            }
+          }
+        } catch (payoutError) {
+          console.error("Failed to create payout rules:", payoutError);
+          toast({
+            title: "Warning",
+            description: "Campaign created but some payout rules may not have been saved.",
+            variant: "destructive",
+          });
+        }
+      }
       
       // Show success toast
       toast({
@@ -456,6 +517,105 @@ export default function CreateCampaignPage() {
                 </div>
               </div>
             </div>
+            
+            {/* Payout Rules Section - Only shown when CPA is selected */}
+            {pricingType === 'cpa' && (
+              <div className="space-y-4 rounded-md border border-border bg-muted/30 p-4">
+                <h3 className="text-sm font-semibold">Payout Rules</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Global Payout */}
+                  <div className="space-y-2">
+                    <Label htmlFor="global-payout">Default payout per conversion</Label>
+                    <Input
+                      id="global-payout"
+                      type="number"
+                      min={0}
+                      max={9999.99999}
+                      step="any"
+                      placeholder="Enter default payout per conversion"
+                      value={globalPayout}
+                      onChange={(e) => setGlobalPayout(e.target.value)}
+                      disabled={isLoading}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Default payout for all zones unless overridden
+                    </p>
+                  </div>
+                  
+                  {/* Zone-specific Payout */}
+                  <div className="space-y-2">
+                    <Label>Custom per zone payout</Label>
+                    <div className="flex gap-2">
+                      <Select 
+                        value={selectedZoneForPayout} 
+                        onValueChange={setSelectedZoneForPayout}
+                        disabled={isLoading}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select zone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {zones.filter(z => !zonePayouts.some(zp => zp.zone_id === String(z.id))).map((zone) => (
+                            <SelectItem key={zone.id} value={String(zone.id)}>
+                              {zone.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="Payout"
+                        value={newZonePayout}
+                        onChange={(e) => setNewZonePayout(e.target.value)}
+                        disabled={isLoading}
+                        className="w-32"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleAddZonePayout}
+                        disabled={isLoading || !selectedZoneForPayout || !newZonePayout}
+                        size="sm"
+                      >
+                        Add rule
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Override default payout for specific zones
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Zone Payout Rules List */}
+                {zonePayouts.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-xs">Zone-specific rules</Label>
+                    <div className="space-y-1">
+                      {zonePayouts.map((zonePayout) => {
+                        const zone = zones.find(z => String(z.id) === zonePayout.zone_id);
+                        return (
+                          <div key={zonePayout.zone_id} className="flex items-center justify-between rounded-md bg-background p-2 text-sm">
+                            <span className="flex-1">{zone?.name || zonePayout.zone_id}</span>
+                            <span className="font-medium mr-2">${zonePayout.payout}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveZonePayout(zonePayout.zone_id)}
+                              disabled={isLoading}
+                              className="h-6 w-6 p-0"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             
             <div className="space-y-2">
               <Label htmlFor="redirect_url">

@@ -6,14 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { getCampaign, updateCampaign } from "@/lib/services/campaigns";
+import { getCampaign, updateCampaign, getCampaignPayoutRules, createPayoutRule, deletePayoutRule } from "@/lib/services/campaigns";
 import { getZones } from "@/lib/services/zones";
 import { Campaign, TargetingRule, Zone } from "@/types/api";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { getTimezone, getUtcMsForStartOfDayInTimezone, getUtcMsForEndOfDayInTimezone } from "@/lib/timezone";
-import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv } from "lucide-react";
+import { CalendarIcon, MonitorIcon, SmartphoneIcon, TabletIcon, GlobeIcon, LayoutIcon, Tv, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -61,7 +61,15 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
 
   // Unique users targeting state
   const [uniqueUsersValue, setUniqueUsersValue] = useState<string>("");
-  const [uniqueUsersRuleId, setUniqueUsersRuleId] = useState<number | null>(null);  
+  const [uniqueUsersRuleId, setUniqueUsersRuleId] = useState<number | null>(null);
+  
+  // Payout rules state
+  const [globalPayout, setGlobalPayout] = useState<string>("");
+  const [originalGlobalPayout, setOriginalGlobalPayout] = useState<string>("");
+  const [zonePayouts, setZonePayouts] = useState<Array<{zone_id: string, payout: string}>>([]);
+  const [originalZonePayouts, setOriginalZonePayouts] = useState<Array<{zone_id: string, payout: string}>>([]);
+  const [selectedZoneForPayout, setSelectedZoneForPayout] = useState<string>("");
+  const [newZonePayout, setNewZonePayout] = useState<string>("");  
   
   // Payment: model (CPM/CPA) and rate for CPA
   const [pricingType, setPricingType] = useState<'cpm' | 'cpa'>('cpm');
@@ -181,6 +189,31 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
         setEndDate(campaignData.end_date ? new Date(campaignData.end_date) : undefined);
         setPricingType(campaignData.payment_model === 'cpa' ? 'cpa' : 'cpm');
         setRate(campaignData.rate != null ? String(campaignData.rate) : "");
+        
+        // Load payout rules if CPA
+        if (campaignData.payment_model === 'cpa') {
+          try {
+            const payoutRules = await getCampaignPayoutRules(campaignId);
+            
+            // Find global rule (zone_id is null)
+            const globalRule = payoutRules.find(rule => rule.zone_id === null);
+            if (globalRule) {
+              setGlobalPayout(String(globalRule.payout));
+              setOriginalGlobalPayout(String(globalRule.payout));
+            }
+            
+            // Find zone-specific rules
+            const zoneRules = payoutRules.filter(rule => rule.zone_id !== null);
+            const zonePayoutsList = zoneRules.map(rule => ({
+              zone_id: rule.zone_id!,
+              payout: String(rule.payout)
+            }));
+            setZonePayouts(zonePayoutsList);
+            setOriginalZonePayouts(zonePayoutsList);
+          } catch (payoutError) {
+            console.error("Failed to load payout rules:", payoutError);
+          }
+        }
         
         // Set targeting rules if available
         if (campaignData.targeting_rules) {
@@ -394,6 +427,32 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
     ]);
   }, [uniqueUsersValue, uniqueUsersRuleId]);
   
+  // Handle adding zone payout
+  const handleAddZonePayout = () => {
+    if (!selectedZoneForPayout || !newZonePayout) {
+      return;
+    }
+    
+    // Check if zone already has a payout rule
+    if (zonePayouts.some(zp => zp.zone_id === selectedZoneForPayout)) {
+      toast({
+        title: "Zone already has a payout rule",
+        description: "Please remove the existing rule first",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setZonePayouts(prev => [...prev, { zone_id: selectedZoneForPayout, payout: newZonePayout }]);
+    setSelectedZoneForPayout("");
+    setNewZonePayout("");
+  };
+  
+  // Handle removing zone payout
+  const handleRemoveZonePayout = (zoneId: string) => {
+    setZonePayouts(prev => prev.filter(zp => zp.zone_id !== zoneId));
+  };
+  
   // Handle retry
   const handleRetry = () => {
     setIsLoading(true);
@@ -411,6 +470,27 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
         setEndDate(campaignData.end_date ? new Date(campaignData.end_date) : undefined);
         setPricingType(campaignData.payment_model === 'cpa' ? 'cpa' : 'cpm');
         setRate(campaignData.rate != null ? String(campaignData.rate) : "");
+        
+        // Load payout rules if CPA (for retry)
+        if (campaignData.payment_model === 'cpa') {
+          getCampaignPayoutRules(campaignId).then(payoutRules => {
+            const globalRule = payoutRules.find(rule => rule.zone_id === null);
+            if (globalRule) {
+              setGlobalPayout(String(globalRule.payout));
+              setOriginalGlobalPayout(String(globalRule.payout));
+            }
+            
+            const zoneRules = payoutRules.filter(rule => rule.zone_id !== null);
+            const zonePayoutsList = zoneRules.map(rule => ({
+              zone_id: rule.zone_id!,
+              payout: String(rule.payout)
+            }));
+            setZonePayouts(zonePayoutsList);
+            setOriginalZonePayouts(zonePayoutsList);
+          }).catch(payoutError => {
+            console.error("Failed to load payout rules on retry:", payoutError);
+          });
+        }
         
         // Set targeting rules if available
         if (campaignData.targeting_rules) {
@@ -593,6 +673,67 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
         throw targetingError;
       }
 
+      // 3. Update payout rules if CPA is selected
+      if (pricingType === 'cpa') {
+        try {
+          // Handle global payout
+          const currentGlobalPayout = globalPayout && parseFloat(globalPayout) > 0 ? globalPayout : "";
+          const hadGlobalPayout = originalGlobalPayout !== "";
+          const hasGlobalPayout = currentGlobalPayout !== "";
+          
+          if (hadGlobalPayout && !hasGlobalPayout) {
+            // Delete global payout rule
+            await deletePayoutRule(campaignId);
+          } else if (hasGlobalPayout && (!hadGlobalPayout || currentGlobalPayout !== originalGlobalPayout)) {
+            // Create or update global payout rule (delete + create)
+            if (hadGlobalPayout) {
+              await deletePayoutRule(campaignId);
+            }
+            await createPayoutRule(campaignId, {
+              payout: parseFloat(currentGlobalPayout)
+            });
+          }
+          
+          // Handle zone-specific payouts
+          // Find deleted zone payouts
+          for (const originalZonePayout of originalZonePayouts) {
+            if (!zonePayouts.some(zp => zp.zone_id === originalZonePayout.zone_id)) {
+              await deletePayoutRule(campaignId, originalZonePayout.zone_id);
+            }
+          }
+          
+          // Find new or updated zone payouts
+          for (const zonePayout of zonePayouts) {
+            const originalZonePayout = originalZonePayouts.find(zp => zp.zone_id === zonePayout.zone_id);
+            
+            if (!originalZonePayout) {
+              // New zone payout
+              await createPayoutRule(campaignId, {
+                payout: parseFloat(zonePayout.payout),
+                zone_id: zonePayout.zone_id
+              });
+            } else if (zonePayout.payout !== originalZonePayout.payout) {
+              // Updated zone payout (delete + create)
+              await deletePayoutRule(campaignId, zonePayout.zone_id);
+              await createPayoutRule(campaignId, {
+                payout: parseFloat(zonePayout.payout),
+                zone_id: zonePayout.zone_id
+              });
+            }
+          }
+          
+          console.log("Payout rules updated successfully.");
+        } catch (payoutError) {
+          console.error("Failed to update payout rules:", payoutError);
+          toast({
+            title: "Payout Rules Update Failed",
+            description: "Campaign updated, but some payout rules may not have been saved.",
+            variant: "destructive",
+          });
+          // Don't re-throw, allow success to proceed
+        }
+      }
+
       // Show success toast (only if both updates succeed)
       toast({
         title: "Campaign updated",
@@ -699,6 +840,107 @@ export default function CampaignEditForm({ campaignId }: CampaignEditFormProps) 
                   </div>
                 </div>
               </div>
+              
+              {/* Payout Rules Section - Only shown when CPA is selected */}
+              {pricingType === 'cpa' && (
+                <div className="space-y-4 rounded-md border border-border bg-muted/30 p-4">
+                  <h3 className="text-sm font-semibold">Payout Rules</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Global Payout */}
+                    <div className="space-y-2">
+                      <Label htmlFor="global-payout">Default payout per conversion</Label>
+                      <Input
+                        id="global-payout"
+                        type="number"
+                        min={0}
+                        max={9999.99999}
+                        step="any"
+                        placeholder="Enter default payout per conversion"
+                        value={globalPayout}
+                        onChange={(e) => setGlobalPayout(e.target.value)}
+                        disabled={isLoading}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Default payout for all zones unless overridden
+                      </p>
+                    </div>
+                    
+                    {/* Zone-specific Payout */}
+                    <div className="space-y-2">
+                      <Label>Custom per zone payout</Label>
+                      <div className="flex gap-2">
+                        <Select 
+                          value={selectedZoneForPayout} 
+                          onValueChange={setSelectedZoneForPayout}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select zone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {zones.filter(z => !zonePayouts.some(zp => zp.zone_id === String(z.id))).map((zone) => (
+                              <SelectItem key={zone.id} value={String(zone.id)}>
+                                {zone.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={9999.99999}
+                          step="any"
+                          placeholder="Payout"
+                          value={newZonePayout}
+                          onChange={(e) => setNewZonePayout(e.target.value)}
+                          disabled={isLoading}
+                          className="w-32"
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleAddZonePayout}
+                          disabled={isLoading || !selectedZoneForPayout || !newZonePayout}
+                          size="sm"
+                        >
+                          Add rule
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Override default payout for specific zones
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Zone Payout Rules List */}
+                  {zonePayouts.length > 0 && (
+                    <div className="space-y-2">
+                      <Label className="text-xs">Zone-specific rules</Label>
+                      <div className="space-y-1">
+                        {zonePayouts.map((zonePayout) => {
+                          const zone = zones.find(z => String(z.id) === zonePayout.zone_id);
+                          return (
+                            <div key={zonePayout.zone_id} className="flex items-center justify-between rounded-md bg-background p-2 text-sm">
+                              <span className="flex-1">{zone?.name || zonePayout.zone_id}</span>
+                              <span className="font-medium mr-2">${zonePayout.payout}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveZonePayout(zonePayout.zone_id)}
+                                disabled={isLoading}
+                                className="h-6 w-6 p-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               
               <div className="space-y-2">
                 <Label htmlFor="redirect_url">Redirect URL</Label>
