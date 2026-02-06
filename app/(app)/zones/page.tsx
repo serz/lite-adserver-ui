@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { updateZone, deleteZone } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { getApiUrl } from '@/lib/api';
@@ -45,10 +45,13 @@ export default function ZonesPage() {
   const [embedSubIdByZone, setEmbedSubIdByZone] = useState<Record<string, string>>({});
   const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const initialFetchDoneRef = useRef(false);
 
-  // Initialize the list data fetch on mount
+  // Initialize the list data fetch once when listData is available (avoids loop when API returns [])
   useEffect(() => {
-    if (listData && listData.items.length === 0 && !listData.isLoading) {
+    if (!listData || initialFetchDoneRef.current) return;
+    if (listData.items.length === 0 && !listData.isLoading) {
+      initialFetchDoneRef.current = true;
       listData.fetchItems(true);
     }
   }, [listData]);

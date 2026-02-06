@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { updateCampaign, getCampaignTargetingRules, deleteCampaign } from '@/lib/services/campaigns';
 import { Campaign, TargetingRule, TargetingRuleType } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
@@ -30,10 +30,13 @@ export default function CampaignsPage() {
   const [targetingRuleTypes, setTargetingRuleTypes] = useState<TargetingRuleType[]>([]);
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const initialFetchDoneRef = useRef(false);
 
-  // Initialize the list data fetch on mount
+  // Initialize the list data fetch once when listData is available (avoids loop when API returns [])
   useEffect(() => {
-    if (listData && listData.items.length === 0 && !listData.isLoading) {
+    if (!listData || initialFetchDoneRef.current) return;
+    if (listData.items.length === 0 && !listData.isLoading) {
+      initialFetchDoneRef.current = true;
       listData.fetchItems(true);
     }
   }, [listData]);
