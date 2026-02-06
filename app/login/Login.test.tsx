@@ -103,4 +103,46 @@ describe('LoginPage', () => {
       expect(mockPush).toHaveBeenCalledWith('/dashboard');
     });
   });
+
+  it('displays error message when login fails with invalid API key', async () => {
+    // Mock login to reject with 401 error
+    mockLogin.mockRejectedValue(new Error('401 Unauthorized: Invalid API key'));
+    
+    render(<LoginPage />);
+    
+    const apiKeyInput = screen.getByLabelText('API Key');
+    const submitButton = screen.getByRole('button', { name: 'Sign in' });
+    
+    // Fill in the form and submit
+    fireEvent.change(apiKeyInput, { target: { value: 'invalid-key' } });
+    fireEvent.click(submitButton);
+    
+    // Check if error message is displayed
+    await waitFor(() => {
+      expect(screen.getByText('Invalid API key. Please check your key and try again.')).toBeInTheDocument();
+    });
+    
+    // Verify login was called but redirect did not happen
+    expect(mockLogin).toHaveBeenCalledWith('invalid-key');
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('displays network error message when connection fails', async () => {
+    // Mock login to reject with network error
+    mockLogin.mockRejectedValue(new Error('Network error: Failed to connect to server'));
+    
+    render(<LoginPage />);
+    
+    const apiKeyInput = screen.getByLabelText('API Key');
+    const submitButton = screen.getByRole('button', { name: 'Sign in' });
+    
+    // Fill in the form and submit
+    fireEvent.change(apiKeyInput, { target: { value: 'test-key' } });
+    fireEvent.click(submitButton);
+    
+    // Check if error message is displayed
+    await waitFor(() => {
+      expect(screen.getByText('Network error. Please check your connection and try again.')).toBeInTheDocument();
+    });
+  });
 }); 

@@ -11,10 +11,10 @@ export interface PublicTenantSettings {
 
 /**
  * Tenant Settings Interface
+ * Note: user email/role/permissions are now in UserIdentity (from /api/me), not here
  */
 export interface TenantSettings {
   company: string;
-  email?: string;
   timezone: string;
   primary_color: string;
   secondary_color: string;

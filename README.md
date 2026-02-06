@@ -358,30 +358,43 @@ By default, the UI connects to `https://api.affset.com`. For local development, 
 
 ## Authentication
 
-The dashboard uses API key-based authentication:
+The dashboard uses API key-based authentication with validation:
 
 1. **Login**: Enter your API key on the login screen
-2. **Storage**: API key is stored in localStorage
-3. **Requests**: All API requests include `Authorization: Bearer <api-key>` header
-4. **Namespace**: Requests include `x-namespace` header for multi-tenant support
-5. **Logout**: Click "Sign out" to clear the API key
+2. **Validation**: API key is validated via `GET /api/me` before being stored
+3. **Storage**: Valid API key is stored in localStorage
+4. **User Identity**: User email, role, and permissions are cached
+5. **Requests**: All API requests include `Authorization: Bearer <api-key>` header
+6. **Namespace**: Requests include `x-namespace` header for multi-tenant support
+7. **Logout**: Click "Sign out" to clear the API key and user identity
 
 ### Auth Flow
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Login Page │────►│ AuthProvider│────►│  Dashboard  │
-│             │     │             │     │             │
-│ Enter API   │     │ Store key   │     │ Protected   │
-│ Key         │     │ Init client │     │ Routes      │
-└─────────────┘     └─────────────┘     └─────────────┘
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐     ┌─────────────┐
+│  Login Page │────►│ Validate Key │────►│ AuthProvider│────►│  Dashboard  │
+│             │     │  /api/me     │     │             │     │             │
+│ Enter API   │     │ Get user     │     │ Store key & │     │ Protected   │
+│ Key         │     │ identity     │     │ identity    │     │ Routes      │
+└─────────────┘     └──────────────┘     └─────────────┘     └─────────────┘
+                            │
+                            ▼
+                    ┌──────────────┐
+                    │ Login Error  │
+                    │ (401/400)    │
+                    │ Stay on page │
+                    └──────────────┘
 ```
 
 The `AuthProvider` component:
-- Checks authentication status on mount
-- Initializes the API client with stored key
+- Validates API key on login via `/api/me` endpoint
+- Caches user identity (email, role, permissions) in memory
+- Checks authentication status on mount and re-validates if needed
+- Initializes the API client with validated key
 - Redirects unauthenticated users to login
-- Provides `login()` and `logout()` functions via context
+- Provides `login()`, `logout()`, and `userIdentity` via context
+
+For detailed authentication documentation, see [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md).
 
 ## State Management
 

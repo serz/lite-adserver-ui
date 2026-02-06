@@ -23,25 +23,33 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [displayName, setDisplayName] = useState("Lite Adserver");
+  const [displayName, setDisplayName] = useState<string | null>(null);
   const [accountDropdownMounted, setAccountDropdownMounted] = useState(false);
   const pathname = usePathname();
-  const { logout } = useAuth();
-  const { company, email } = useTenantSettings();
+  const { logout, userIdentity, isAuthReady, isAuthenticated } = useAuth();
+  const { company, isLoading: tenantLoading } = useTenantSettings();
 
   useEffect(() => setAccountDropdownMounted(true), []);
 
-  // Update display name after mount to avoid hydration mismatch
+  // Update display name - prioritize company from settings, fallback to namespace
   useEffect(() => {
+    // Wait for tenant settings to load to avoid showing namespace then company
+    if (tenantLoading) {
+      return;
+    }
+    
     if (company) {
       setDisplayName(company);
     } else {
       const namespace = getNamespace();
       if (namespace) {
+        // Only capitalize first letter if we're using namespace
         setDisplayName(namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase());
+      } else {
+        setDisplayName("Lite Adserver");
       }
     }
-  }, [company]);
+  }, [company, tenantLoading]);
   
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -81,7 +89,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center">
-            <span className="text-xl font-bold">{displayName}</span>
+            <span className="text-xl font-bold">{displayName || "Loading..."}</span>
           </div>
           <Button
             variant="ghost"
@@ -141,8 +149,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="gap-1.5">
                       <CircleUser className="h-4 w-4 shrink-0" />
-                      <span className="max-w-[140px] truncate sm:max-w-[200px]" title={email ?? undefined}>
-                        {email ?? "Account"}
+                      <span 
+                        className="max-w-[140px] truncate sm:max-w-[200px]" 
+                        title={userIdentity?.email || 'No email available'}
+                      >
+                        {userIdentity?.email || (userIdentity ? 'Account' : 'Loading...')}
                       </span>
                       <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                     </Button>

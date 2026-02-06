@@ -94,7 +94,6 @@ export function useTenantSettings() {
     error,
     refetch,
     company: settings?.company,
-    email: settings?.email,
     timezone: settings?.timezone,
     primaryColor: settings?.primary_color,
     secondaryColor: settings?.secondary_color,

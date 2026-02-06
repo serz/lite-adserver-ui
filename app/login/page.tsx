@@ -84,10 +84,25 @@ export default function LoginPage() {
 
     try {
       // Use the login function from the auth context
+      // This will now validate the API key via /api/me before storing it
       await login(apiKey.trim());
-      // The auth context will redirect to dashboard
+      // The auth context will redirect to dashboard on success
     } catch (err) {
-      setError("Failed to log in. Please check your API key and try again.");
+      // Show specific error message based on the error
+      if (err instanceof Error) {
+        if (err.message.includes('401') || err.message.includes('Unauthorized') || 
+            err.message.includes('invalid') || err.message.includes('expired')) {
+          setError("Invalid API key. Please check your key and try again.");
+        } else if (err.message.includes('400') || err.message.includes('Bad Request')) {
+          setError("Invalid request. Please try again.");
+        } else if (err.message.includes('Network') || err.message.includes('Failed to fetch')) {
+          setError("Network error. Please check your connection and try again.");
+        } else {
+          setError(err.message || "Failed to log in. Please check your API key and try again.");
+        }
+      } else {
+        setError("Failed to log in. Please check your API key and try again.");
+      }
       setIsLoading(false);
     }
   };

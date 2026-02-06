@@ -5,6 +5,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import { getApiKey, setApiKey, clearApiKey, isLoggedIn } from '@/lib/auth';
 import { api } from '@/lib/api';
 import { invalidateTenantSettingsCache } from '@/lib/tenant-settings-cache';
+import { validateApiKey } from '@/lib/services/user';
+import { getCachedUserIdentity, setCachedUserIdentity, invalidateUserIdentityCache } from '@/lib/user-identity-cache';
+import type { UserIdentity } from '@/lib/services/user';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -12,6 +15,7 @@ interface AuthContextType {
   logout: () => void;
   apiInitialized: boolean;
   isAuthReady: boolean;
+  userIdentity: UserIdentity | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [apiInitialized, setApiInitialized] = useState<boolean>(false);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
+  const [userIdentity, setUserIdentity] = useState<UserIdentity | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -29,7 +34,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const loggedIn = isLoggedIn();
         console.log('AuthProvider: Initial auth check, logged in:', loggedIn);
-        setIsAuthenticated(loggedIn);
         
         if (loggedIn) {
           const apiKey = getApiKey();
@@ -37,11 +41,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             console.log('AuthProvider: API key found, initializing API client');
             api.updateApiKey(apiKey);
             setApiInitialized(true);
+            
+            // Try to get cached user identity or validate the key
+            const cachedIdentity = getCachedUserIdentity();
+            if (cachedIdentity) {
+              console.log('AuthProvider: Using cached user identity');
+              setUserIdentity(cachedIdentity);
+              setIsAuthenticated(true);
+            } else {
+              console.log('AuthProvider: Validating API key on mount');
+              try {
+                const identity = await validateApiKey();
+                console.log('AuthProvider: API key valid, user:', identity.email);
+                setCachedUserIdentity(identity);
+                setUserIdentity(identity);
+                setIsAuthenticated(true);
+              } catch (error) {
+                console.warn('AuthProvider: API key validation failed on mount:', error);
+                // Clear invalid credentials
+                clearApiKey();
+                invalidateUserIdentityCache();
+                setIsAuthenticated(false);
+                setApiInitialized(false);
+              }
+            }
           } else {
             console.warn('AuthProvider: No API key found despite logged in status');
-            // Clear logged in state if we have no API key
             setIsAuthenticated(false);
           }
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (error) {
         console.error('AuthProvider: Error initializing auth:', error);
@@ -66,23 +95,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, isAuthReady, isLoginPage, router]);
 
   const login = async (apiKey: string): Promise<void> => {
-    // Store the API key
-    setApiKey(apiKey);
-    
-    // Update the API client
+    // First, update the API client with the key (needed for validation)
     api.updateApiKey(apiKey);
-    setApiInitialized(true);
+    
+    // Validate the API key by calling /api/me
+    try {
+      const identity = await validateApiKey();
+      console.log('AuthProvider: API key validated successfully, user:', identity.email);
+      
+      // Key is valid, store it
+      setApiKey(apiKey);
+      
+      // Cache user identity
+      setCachedUserIdentity(identity);
+      setUserIdentity(identity);
+      
+      // Update authentication state
+      setApiInitialized(true);
+      setIsAuthenticated(true);
 
-    // Update authentication state
-    setIsAuthenticated(true);
-
-    // Redirect to dashboard
-    router.push('/dashboard');
+      // Redirect to dashboard
+      router.push('/dashboard');
+    } catch (error) {
+      // Validation failed, clear the API client and throw error
+      api.updateApiKey('');
+      console.error('AuthProvider: API key validation failed:', error);
+      throw error; // Re-throw so login page can show the error
+    }
   };
 
   const logout = useCallback((): void => {
     // Clear the API key
     clearApiKey();
+    
+    // Clear user identity cache
+    invalidateUserIdentityCache();
+    setUserIdentity(null);
     
     // Clear tenant settings cache so next login gets fresh data
     invalidateTenantSettingsCache();
@@ -126,7 +174,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login, 
       logout, 
       apiInitialized, 
-      isAuthReady 
+      isAuthReady,
+      userIdentity
     }}>
       {children}
     </AuthContext.Provider>
