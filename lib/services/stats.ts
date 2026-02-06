@@ -16,13 +16,8 @@ interface SyncStateResponse {
   last_updated: string;
 }
 
-// In-memory cache for stats data
+// In-memory cache for stats data (keyed by full request params so groupBy/filters changes refetch)
 interface StatsCache {
-  last7DaysStats?: {
-    data: StatsResponse;
-    timestamp: number;
-    expiresIn: number; // milliseconds
-  };
   cachedStats?: {
     key: string;
     data: StatsResponse;
@@ -92,26 +87,12 @@ export async function getStats(options: {
   zoneIds?: number[];
   groupBy?: 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 }): Promise<StatsResponse> {
-  const now = Date.now();
-  const isLast7DaysRequest = isLast7DaysRange(options.from, options.to || now);
-  
-  // Generate cache key for the request
+  // Generate cache key for the request (includes from, to, campaignIds, zoneIds, groupBy)
   const cacheKey = generateCacheKey(options);
-  
-  // Check if we're requesting last 7 days stats and have cached data
+
+  // Check cache (same key required so changing groupBy/filters triggers a new request)
   if (
     options.useCache !== false &&
-    isLast7DaysRequest &&
-    cache.last7DaysStats &&
-    Date.now() - cache.last7DaysStats.timestamp < cache.last7DaysStats.expiresIn
-  ) {
-    return cache.last7DaysStats.data;
-  }
-  
-  // Check for other cached requests
-  if (
-    options.useCache !== false &&
-    !isLast7DaysRequest &&
     cache.cachedStats &&
     cache.cachedStats.key === cacheKey &&
     Date.now() - cache.cachedStats.timestamp < cache.cachedStats.expiresIn
@@ -144,22 +125,12 @@ export async function getStats(options: {
   try {
     const response = await api.get<StatsResponse>(endpoint);
 
-    // Cache last 7 days stats
-    if (isLast7DaysRequest) {
-      cache.last7DaysStats = {
-        data: response,
-        timestamp: Date.now(),
-        expiresIn: CACHE_DURATION
-      };
-    } else {
-      // Cache other requests
-      cache.cachedStats = {
-        key: cacheKey,
-        data: response,
-        timestamp: Date.now(),
-        expiresIn: CACHE_DURATION
-      };
-    }
+    cache.cachedStats = {
+      key: cacheKey,
+      data: response,
+      timestamp: Date.now(),
+      expiresIn: CACHE_DURATION
+    };
 
     return response;
   } catch (error) {
