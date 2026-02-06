@@ -43,7 +43,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   // Initialize the paginated list for campaigns (used by the list page)
   const listData = usePaginatedList<Campaign>({
     fetchFn: async (options) => {
-      const response = await getCampaigns(options);
+      const response = await getCampaigns(options as Parameters<typeof getCampaigns>[0]);
       return {
         items: response.campaigns,
         pagination: response.pagination,

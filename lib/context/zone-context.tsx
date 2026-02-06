@@ -43,7 +43,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   // Initialize the paginated list for zones (used by the list page)
   const listData = usePaginatedList<Zone>({
     fetchFn: async (options) => {
-      const response = await getZones(options);
+      const response = await getZones(options as Parameters<typeof getZones>[0]);
       return {
         items: response.zones,
         pagination: response.pagination,
