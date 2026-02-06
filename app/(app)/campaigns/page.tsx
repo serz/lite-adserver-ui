@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { getCampaigns, updateCampaign, getCampaignTargetingRules, deleteCampaign } from '@/lib/services/campaigns';
+import React, { useEffect, useState, useCallback } from 'react';
+import { updateCampaign, getCampaignTargetingRules, deleteCampaign } from '@/lib/services/campaigns';
 import { Campaign, TargetingRule, TargetingRuleType } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
@@ -18,13 +18,12 @@ import {
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
+import { useCampaigns } from '@/lib/context/campaign-context';
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const hasInitiallyFetchedRef = useRef(false);
   const { toast } = useToast();
+  const { listData, refetchCampaigns } = useCampaigns();
+  
   const [expandedCampaigns, setExpandedCampaigns] = useState<{[campaignId: number]: boolean}>({});
   const [targetingRulesByCampaign, setTargetingRulesByCampaign] = useState<{[campaignId: number]: TargetingRule[]}>({});
   const [loadingTargetingRules, setLoadingTargetingRules] = useState<{[campaignId: number]: boolean}>({});
@@ -32,27 +31,12 @@ export default function CampaignsPage() {
   const [campaignToDelete, setCampaignToDelete] = useState<Campaign | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchCampaigns = useCallback(async (forceFetch = false) => {
-    if (!hasInitiallyFetchedRef.current || forceFetch) {
-      setIsLoading(true);
+  // Initialize the list data fetch on mount
+  useEffect(() => {
+    if (listData && listData.items.length === 0 && !listData.isLoading) {
+      listData.fetchItems(true);
     }
-    try {
-      const response = await getCampaigns({
-        limit: 20,
-        useCache: false,
-        sort: 'created_at',
-        order: 'desc',
-        _t: Date.now().toString()
-      });
-      setCampaigns(response.campaigns);
-      setError(null);
-      hasInitiallyFetchedRef.current = true;
-    } catch (err) {
-      setError('Failed to load campaigns. Please try refreshing.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  }, [listData]);
 
   const fetchTargetingRuleTypes = useCallback(async () => {
     try {
@@ -64,17 +48,19 @@ export default function CampaignsPage() {
   }, []);
 
   useEffect(() => {
-    if (!hasInitiallyFetchedRef.current) {
-      fetchCampaigns();
-      fetchTargetingRuleTypes();
-    }
-  }, [fetchCampaigns, fetchTargetingRuleTypes]);
+    fetchTargetingRuleTypes();
+  }, [fetchTargetingRuleTypes]);
 
   const handleRefresh = async () => {
-    await fetchCampaigns(true);
+    if (listData) {
+      await listData.refresh();
+    }
+    await refetchCampaigns();
   };
 
   const handleToggleStatus = async (campaign: Campaign) => {
+    if (!listData) return;
+    
     try {
       if (campaign.status === 'completed') {
         toast({
@@ -86,7 +72,7 @@ export default function CampaignsPage() {
       }
       const newStatus = campaign.status === 'active' ? 'paused' : 'active';
       await updateCampaign(campaign.id, { status: newStatus });
-      setCampaigns(prevCampaigns =>
+      listData.setItems(prevCampaigns =>
         prevCampaigns.map(c => c.id === campaign.id ? { ...c, status: newStatus } : c)
       );
       toast({
@@ -142,17 +128,19 @@ export default function CampaignsPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!campaignToDelete) return;
+    if (!campaignToDelete || !listData) return;
     setIsDeleting(true);
     try {
       await deleteCampaign(campaignToDelete.id);
-      setCampaigns(prev => prev.filter(c => c.id !== campaignToDelete.id));
+      listData.setItems(prev => prev.filter(c => c.id !== campaignToDelete.id));
       setCampaignToDelete(null);
       toast({
         title: "Campaign deleted",
         description: `"${campaignToDelete.name}" has been deleted.`,
         variant: "default",
       });
+      // Refresh the list to get accurate counts
+      await listData.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -167,6 +155,22 @@ export default function CampaignsPage() {
   const handleDeleteCancel = () => {
     if (!isDeleting) setCampaignToDelete(null);
   };
+
+  // Show loading state if listData is not available yet
+  if (!listData) {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold md:text-3xl">Campaigns</h1>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-20 animate-pulse rounded-md bg-muted"></div>)}
+        </div>
+      </div>
+    );
+  }
+
+  const { items: campaigns, isLoading, error } = listData;
 
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">

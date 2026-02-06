@@ -1,13 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getActiveCampaigns, getActiveCampaignsCount } from '@/lib/services/campaigns';
+import { getCampaigns, getActiveCampaignsCount } from '@/lib/services/campaigns';
 import { Campaign } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { usePaginatedList, UsePaginatedListReturn } from '@/lib/hooks/use-paginated-list';
 
 interface CampaignContextData {
+  // Legacy: for sidebar/dashboard
   activeCampaignsCount: number | null;
   recentActiveCampaigns: Campaign[];
+  
+  // New: for list page
+  listData: UsePaginatedListReturn<Campaign> | null;
+  
+  // Shared state
   isLoading: boolean;
   error: string | null;
   refetchCampaigns: () => Promise<void>;
@@ -16,6 +23,7 @@ interface CampaignContextData {
 const CampaignContext = createContext<CampaignContextData>({
   activeCampaignsCount: null,
   recentActiveCampaigns: [],
+  listData: null,
   isLoading: false,
   error: null,
   refetchCampaigns: async () => {},
@@ -32,6 +40,21 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
+  // Initialize the paginated list for campaigns (used by the list page)
+  const listData = usePaginatedList<Campaign>({
+    fetchFn: async (options) => {
+      const response = await getCampaigns(options);
+      return {
+        items: response.campaigns,
+        pagination: response.pagination,
+      };
+    },
+    itemsPerPage: 20,
+    defaultSort: 'created_at',
+    defaultOrder: 'desc',
+    autoFetch: false, // Don't auto-fetch; let the page control when to fetch
+  });
+
   const fetchCampaignData = useCallback(async () => {
     if (!isAuthReady || !isAuthenticated || !apiInitialized) {
       console.log('Campaign context: Auth not ready, not authenticated, or API not initialized');
@@ -43,7 +66,6 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Don't retry if we've encountered a network error
     if (networkErrorRef.current) {
       console.log('Campaign context: Skipping fetch due to previous network error');
       return;
@@ -52,25 +74,28 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     console.log('Campaign context: Fetching campaign data...');
     setIsLoading(true);
     try {
-      // Fetch active campaigns count (uses cached data if available)
       const count = await getActiveCampaignsCount();
       console.log('Campaign context: Received campaign count:', count);
       setActiveCampaignsCount(count);
       
-      // Fetch recent active campaigns
-      const activeCampaignsResponse = await getActiveCampaigns(3);
+      // Get recent campaigns
+      const activeCampaignsResponse = await getCampaigns({
+        status: 'active',
+        limit: 3,
+        sort: 'created_at',
+        order: 'desc',
+        useCache: true,
+      });
       console.log('Campaign context: Received recent campaigns:', activeCampaignsResponse.campaigns);
       setRecentActiveCampaigns(activeCampaignsResponse.campaigns);
       
       setError(null);
       dataFetchedRef.current = true;
-      // Reset network error flag on successful fetch
       networkErrorRef.current = false;
     } catch (err) {
       console.error('Campaign context: Error fetching campaign data:', err);
       let errorMessage = 'Failed to load campaign data';
       
-      // Handle network errors
       if (err instanceof Error) {
         if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
           dataFetchedRef.current = true;
@@ -81,7 +106,6 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
                    err.message.includes('Failed to fetch') ||
                    err.message.includes('net::ERR_') ||
                    err.message.includes('ERR_NETWORK')) {
-          // Network-related errors - stop retrying
           console.log('Campaign context: Network error detected, stopping retries');
           networkErrorRef.current = true;
           dataFetchedRef.current = true;
@@ -105,13 +129,16 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     dataFetchedRef.current = false;
     networkErrorRef.current = false;
     await fetchCampaignData();
-  }, [fetchCampaignData]);
+    // Also refresh the list data
+    await listData.refresh();
+  }, [fetchCampaignData, listData]);
 
   return (
     <CampaignContext.Provider
       value={{
         activeCampaignsCount,
         recentActiveCampaigns,
+        listData,
         isLoading,
         error,
         refetchCampaigns,

@@ -1,13 +1,20 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { getActiveZones, getActiveZonesCount } from '@/lib/services/zones';
+import { getZones, getActiveZonesCount } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { useAuth } from '@/components/auth-provider';
+import { usePaginatedList, UsePaginatedListReturn } from '@/lib/hooks/use-paginated-list';
 
 interface ZoneContextData {
+  // Legacy: for sidebar/dashboard
   activeZonesCount: number | null;
   recentActiveZones: Zone[];
+  
+  // New: for list page
+  listData: UsePaginatedListReturn<Zone> | null;
+  
+  // Shared state
   isLoading: boolean;
   error: string | null;
   refetchZones: () => Promise<void>;
@@ -16,6 +23,7 @@ interface ZoneContextData {
 const ZoneContext = createContext<ZoneContextData>({
   activeZonesCount: null,
   recentActiveZones: [],
+  listData: null,
   isLoading: false,
   error: null,
   refetchZones: async () => {},
@@ -29,24 +37,35 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
-  // Use a ref to track if we've already fetched data to prevent duplicate fetches
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
+  // Initialize the paginated list for zones (used by the list page)
+  const listData = usePaginatedList<Zone>({
+    fetchFn: async (options) => {
+      const response = await getZones(options);
+      return {
+        items: response.zones,
+        pagination: response.pagination,
+      };
+    },
+    itemsPerPage: 10,
+    defaultSort: 'created_at',
+    defaultOrder: 'desc',
+    autoFetch: false, // Don't auto-fetch; let the page control when to fetch
+  });
+
   const fetchZoneData = useCallback(async () => {
-    // Don't continue if auth isn't ready or user isn't authenticated
     if (!isAuthReady || !isAuthenticated || !apiInitialized) {
       console.log('Zone context: Auth not ready or not authenticated');
       return;
     }
     
-    // If we've already fetched data, don't fetch again
     if (dataFetchedRef.current) {
       console.log('Zone context: Data already fetched, skipping');
       return;
     }
 
-    // Don't retry if we've encountered a network error
     if (networkErrorRef.current) {
       console.log('Zone context: Skipping fetch due to previous network error');
       return;
@@ -55,26 +74,28 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     console.log('Zone context: Fetching zone data...');
     setIsLoading(true);
     try {
-      // Fetch active zones count (uses cached data if available)
       const count = await getActiveZonesCount();
       console.log('Zone context: Received zone count:', count);
       setActiveZonesCount(count);
       
-      // Fetch recent active zones
-      const activeZonesResponse = await getActiveZones(3);
+      // Get recent zones from the list data if available, otherwise fetch separately
+      const activeZonesResponse = await getZones({
+        status: 'active',
+        limit: 3,
+        sort: 'created_at',
+        order: 'desc',
+        useCache: true,
+      });
       console.log('Zone context: Received recent zones:', activeZonesResponse.zones);
       setRecentActiveZones(activeZonesResponse.zones);
       
       setError(null);
-      // Mark that we've successfully fetched data
       dataFetchedRef.current = true;
-      // Reset network error flag on successful fetch
       networkErrorRef.current = false;
     } catch (err) {
       console.error('Zone context: Error fetching zone data:', err);
       let errorMessage = 'Failed to load zone data';
       
-      // Handle network errors
       if (err instanceof Error) {
         if (err.message.includes('Authentication required') || err.message.includes('API key is required')) {
           dataFetchedRef.current = true;
@@ -85,7 +106,6 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
                    err.message.includes('Failed to fetch') ||
                    err.message.includes('net::ERR_') ||
                    err.message.includes('ERR_NETWORK')) {
-          // Network-related errors - stop retrying
           console.log('Zone context: Network error detected, stopping retries');
           networkErrorRef.current = true;
           dataFetchedRef.current = true;
@@ -102,24 +122,25 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     console.log('Zone context: useEffect triggered', { isAuthReady, isAuthenticated, apiInitialized });
     
-    // Only fetch if auth is ready and we're authenticated
     if (isAuthReady && isAuthenticated && apiInitialized) {
       fetchZoneData();
     }
   }, [fetchZoneData, isAuthReady, isAuthenticated, apiInitialized]);
 
   const refetchZones = useCallback(async () => {
-    // Reset the fetched flag to force a new fetch
     dataFetchedRef.current = false;
     networkErrorRef.current = false;
     await fetchZoneData();
-  }, [fetchZoneData]);
+    // Also refresh the list data
+    await listData.refresh();
+  }, [fetchZoneData, listData]);
 
   return (
     <ZoneContext.Provider
       value={{
         activeZonesCount,
         recentActiveZones,
+        listData,
         isLoading,
         error,
         refetchZones,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState, useEffect, useRef } from 'react';
-import { getZones, updateZone, deleteZone } from '@/lib/services/zones';
+import { useState, useEffect } from 'react';
+import { updateZone, deleteZone } from '@/lib/services/zones';
 import { Zone } from '@/types/api';
 import { getApiUrl } from '@/lib/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
@@ -35,51 +35,23 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useZones } from '@/lib/context/zone-context';
 
 export default function ZonesPage() {
-  const [zones, setZones] = useState<Zone[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalItems, setTotalItems] = useState(0);
-  const itemsPerPage = 10;
-  const hasInitiallyFetchedRef = useRef(false);
   const { toast } = useToast();
+  const { listData, refetchZones } = useZones();
+  
   const [copiedZoneId, setCopiedZoneId] = useState<number | string | null>(null);
   const [embedSubIdByZone, setEmbedSubIdByZone] = useState<Record<string, string>>({});
   const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const fetchZones = useCallback(async (forceFetch = false, page = currentPage) => {
-    if (!hasInitiallyFetchedRef.current || forceFetch) {
-      setIsLoading(true);
-    }
-    try {
-      const offset = (page - 1) * itemsPerPage;
-      const response = await getZones({
-        limit: itemsPerPage,
-        offset,
-        useCache: false,
-        sort: 'created_at',
-        order: 'desc',
-        _t: Date.now().toString()
-      });
-      setZones(response.zones);
-      setTotalItems(response.pagination.total);
-      setTotalPages(Math.ceil(response.pagination.total / itemsPerPage));
-      setError(null);
-      hasInitiallyFetchedRef.current = true;
-    } catch (err) {
-      setError('Failed to load zones. Please try refreshing.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentPage]);
-
+  // Initialize the list data fetch on mount
   useEffect(() => {
-    fetchZones(false, currentPage);
-  }, [fetchZones, currentPage]);
+    if (listData && listData.items.length === 0 && !listData.isLoading) {
+      listData.fetchItems(true);
+    }
+  }, [listData]);
 
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
     switch (status) {
@@ -90,18 +62,19 @@ export default function ZonesPage() {
   };
 
   const handleRefresh = async () => {
-    await fetchZones(true, currentPage);
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    if (listData) {
+      await listData.refresh();
+    }
+    await refetchZones();
   };
 
   const handleToggleStatus = async (zone: Zone) => {
+    if (!listData) return;
+    
     try {
       const newStatus = zone.status === 'active' ? 'inactive' : 'active';
       await updateZone(zone.id, { status: newStatus });
-      setZones(prevZones =>
+      listData.setItems(prevZones =>
         prevZones.map(z => z.id === zone.id ? { ...z, status: newStatus } : z)
       );
       toast({
@@ -119,13 +92,14 @@ export default function ZonesPage() {
   };
 
   const getPageNumbers = (): (number | string)[] => {
+    if (!listData) return [1];
     const pages: (number | string)[] = [1];
-    let startPage = Math.max(2, currentPage - 1);
-    let endPage = Math.min(totalPages - 1, currentPage + 1);
+    let startPage = Math.max(2, listData.currentPage - 1);
+    let endPage = Math.min(listData.totalPages - 1, listData.currentPage + 1);
     if (startPage > 2) pages.push('ellipsis1');
     for (let i = startPage; i <= endPage; i++) pages.push(i);
-    if (endPage < totalPages - 1 && totalPages > 1) pages.push('ellipsis2');
-    if (totalPages > 1) pages.push(totalPages);
+    if (endPage < listData.totalPages - 1 && listData.totalPages > 1) pages.push('ellipsis2');
+    if (listData.totalPages > 1) pages.push(listData.totalPages);
     return pages;
   };
 
@@ -165,18 +139,19 @@ export default function ZonesPage() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!zoneToDelete) return;
+    if (!zoneToDelete || !listData) return;
     setIsDeleting(true);
     try {
       await deleteZone(zoneToDelete.id);
-      setZones(prev => prev.filter(z => z.id !== zoneToDelete.id));
-      setTotalItems(prev => Math.max(0, prev - 1));
+      listData.setItems(prev => prev.filter(z => z.id !== zoneToDelete.id));
       setZoneToDelete(null);
       toast({
         title: "Zone deleted",
         description: `"${zoneToDelete.name}" has been deleted.`,
         variant: "default",
       });
+      // Refresh the list to get accurate counts
+      await listData.refresh();
     } catch (error) {
       toast({
         title: "Error",
@@ -192,6 +167,22 @@ export default function ZonesPage() {
     if (!isDeleting) setZoneToDelete(null);
   };
 
+  // Show loading state if listData is not available yet
+  if (!listData) {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold md:text-3xl">Zones</h1>
+        </div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => <div key={i} className="h-20 animate-pulse rounded-md bg-muted"></div>)}
+        </div>
+      </div>
+    );
+  }
+
+  const { items: zones, isLoading, error, currentPage, totalPages, totalItems, setPage } = listData;
+
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
       <div className="mb-6 flex items-center justify-between">
@@ -203,7 +194,7 @@ export default function ZonesPage() {
         </div>
         <ZoneDialog
           triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow"
-          onZoneCreated={() => fetchZones(true)}
+          onZoneCreated={handleRefresh}
         />
       </div>
 
@@ -224,7 +215,7 @@ export default function ZonesPage() {
           <p className="text-muted-foreground mb-6 max-w-sm">Add your first zone to define where ads can be displayed.</p>
           <ZoneDialog
             triggerClassName="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow"
-            onZoneCreated={() => fetchZones(true)}
+            onZoneCreated={handleRefresh}
           >
             <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
               Add Zone
@@ -321,7 +312,7 @@ export default function ZonesPage() {
                           </div>
                         </DialogContent>
                       </Dialog>
-                      <ZoneDialog mode="edit" zoneId={zone.id} onZoneUpdated={() => fetchZones(true)}>
+                      <ZoneDialog mode="edit" zoneId={zone.id} onZoneUpdated={handleRefresh}>
                         <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit zone">
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -357,21 +348,21 @@ export default function ZonesPage() {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationPrevious onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)} className={`cursor-pointer ${currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`} />
+                    <PaginationPrevious onClick={() => currentPage > 1 && setPage(currentPage - 1)} className={`cursor-pointer ${currentPage === 1 ? 'pointer-events-none opacity-50' : ''}`} />
                   </PaginationItem>
                   {getPageNumbers().map((page, index) =>
                     page === 'ellipsis1' || page === 'ellipsis2' ? (
                       <PaginationItem key={`ellipsis-${index}`}><PaginationEllipsis /></PaginationItem>
                     ) : (
                       <PaginationItem key={page}>
-                        <PaginationLink isActive={currentPage === page} onClick={() => handlePageChange(page as number)} className="cursor-pointer">
+                        <PaginationLink isActive={currentPage === page} onClick={() => setPage(page as number)} className="cursor-pointer">
                           {page}
                         </PaginationLink>
                       </PaginationItem>
                     )
                   )}
                   <PaginationItem>
-                    <PaginationNext onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)} className={`cursor-pointer ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`} />
+                    <PaginationNext onClick={() => currentPage < totalPages && setPage(currentPage + 1)} className={`cursor-pointer ${currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}`} />
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
