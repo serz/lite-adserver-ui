@@ -1,27 +1,37 @@
 import { api } from '@/lib/api';
 import { CampaignsResponse, Campaign, TargetingRule, PayoutRule, PayoutRulesResponse } from '@/types/api';
 import { syncCampaign } from './sync';
+import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
+import { createListService, activeResourceCacheKeyGenerator } from './list-service-factory';
+import { stripTimestampSuffix } from './query-builder';
 
-// In-memory cache for campaign data
-interface CampaignCache {
-  activeCampaigns?: {
-    data: CampaignsResponse;
-    timestamp: number;
-    expiresIn: number; // milliseconds
+// Cache manager for campaign lists
+const listCacheManager = createCacheManager<CampaignsResponse>();
+
+// Cache manager for individual campaigns
+const itemCacheManager = createCacheManager<Campaign>();
+
+// Create the generic list service for campaigns
+const campaignListService = createListService<CampaignsResponse, {
+  status?: 'active' | 'paused' | 'completed';
+  limit?: number;
+  offset?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  useCache?: boolean;
+  _t?: string;
+}>({
+  endpoint: '/api/campaigns',
+  cacheKeyGenerator: activeResourceCacheKeyGenerator('Campaigns'),
+  cacheDuration: DEFAULT_CACHE_DURATION,
+  cacheManager: listCacheManager,
+  queryConfig: {
+    transforms: {
+      sort: stripTimestampSuffix,
+    },
+    omit: ['useCache'],
   },
-  campaignById?: {
-    [id: number]: {
-      data: Campaign;
-      timestamp: number;
-      expiresIn: number;
-    }
-  }
-}
-
-const cache: CampaignCache = {};
-
-// Cache duration (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
+});
 
 /**
  * Fetch campaigns with optional filtering options
@@ -35,74 +45,7 @@ export async function getCampaigns(options?: {
   useCache?: boolean;
   _t?: string; // Timestamp for cache busting
 }): Promise<CampaignsResponse> {
-  // Check if we can use cached data for active campaigns
-  if (
-    options?.useCache !== false &&
-    options?.status === 'active' && 
-    options?.limit === 1 && 
-    options?.sort === 'created_at' && 
-    options?.order === 'desc' &&
-    cache.activeCampaigns &&
-    Date.now() - cache.activeCampaigns.timestamp < cache.activeCampaigns.expiresIn
-  ) {
-    return cache.activeCampaigns.data;
-  }
-
-  // Build query parameters
-  const queryParams = new URLSearchParams();
-  
-  if (options?.status) {
-    queryParams.append('status', options.status);
-  }
-  
-  if (options?.limit) {
-    queryParams.append('limit', options.limit.toString());
-  }
-  
-  if (options?.offset) {
-    queryParams.append('offset', options.offset.toString());
-  }
-  
-  if (options?.sort) {
-    // Handle timestamp-added sort parameters by extracting the base sort field
-    // Safely handle 'created_at' with timestamp appended
-    let sortField = options.sort;
-    
-    // If the sort parameter has a timestamp appended (for cache busting)
-    if (sortField.startsWith('created_at_')) {
-      sortField = 'created_at';
-    }
-    
-    queryParams.append('sort', sortField);
-  }
-  
-  if (options?.order) {
-    queryParams.append('order', options.order);
-  }
-  
-  // Add timestamp for cache busting if provided
-  if (options?._t) {
-    queryParams.append('_t', options._t);
-  }
-  
-  const endpoint = `/api/campaigns${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  const response = await api.get<CampaignsResponse>(endpoint);
-
-  // Cache active campaigns data
-  if (
-    options?.status === 'active' && 
-    options?.limit === 1 && 
-    options?.sort === 'created_at' && 
-    options?.order === 'desc'
-  ) {
-    cache.activeCampaigns = {
-      data: response,
-      timestamp: Date.now(),
-      expiresIn: CACHE_DURATION
-    };
-  }
-
-  return response;
+  return campaignListService.fetch(options);
 }
 
 /**
@@ -148,9 +91,8 @@ export async function createCampaign(campaignData: {
     const response = await api.post<Campaign>('/api/campaigns', campaignData);
     
     // Invalidate all cache after creating a new campaign
-    Object.keys(cache).forEach(key => {
-      delete cache[key as keyof CampaignCache];
-    });
+    listCacheManager.invalidate();
+    itemCacheManager.invalidate();
     
     // Sync newly created campaign to KV storage
     try {
@@ -186,9 +128,8 @@ export async function updateCampaign(
     const response = await api.put<Campaign>(`/api/campaigns/${id}`, campaignData);
     
     // Invalidate all cache after updating a campaign
-    Object.keys(cache).forEach(key => {
-      delete cache[key as keyof CampaignCache];
-    });
+    listCacheManager.invalidate();
+    itemCacheManager.invalidate();
     
     // Sync campaign to KV storage after any update (status, name, dates, etc.)
     try {
@@ -212,14 +153,15 @@ export async function getCampaign(id: number, options?: {
 }): Promise<Campaign> {
   console.log(`getCampaign called for ID: ${id} with options:`, options);
   
+  const cacheKey = `campaign_${id}`;
+  
   // Check if we can use cached data
-  if (
-    options?.useCache !== false &&
-    cache.campaignById?.[id] &&
-    Date.now() - cache.campaignById[id].timestamp < cache.campaignById[id].expiresIn
-  ) {
-    console.log(`Using cached campaign data for ID: ${id}`);
-    return cache.campaignById[id].data;
+  if (options?.useCache !== false) {
+    const cached = itemCacheManager.get(cacheKey);
+    if (cached !== null) {
+      console.log(`Using cached campaign data for ID: ${id}`);
+      return cached;
+    }
   }
 
   try {
@@ -228,15 +170,7 @@ export async function getCampaign(id: number, options?: {
     console.log(`Campaign API response received for ID: ${id}`, response);
     
     // Cache the response
-    if (!cache.campaignById) {
-      cache.campaignById = {};
-    }
-    
-    cache.campaignById[id] = {
-      data: response,
-      timestamp: Date.now(),
-      expiresIn: CACHE_DURATION
-    };
+    itemCacheManager.set(cacheKey, response, DEFAULT_CACHE_DURATION);
     
     return response;
   } catch (error) {
@@ -252,9 +186,8 @@ export async function deleteCampaign(id: number): Promise<void> {
   await api.delete(`/api/campaigns/${id}`);
 
   // Invalidate all cache after deleting a campaign
-  Object.keys(cache).forEach(key => {
-    delete cache[key as keyof CampaignCache];
-  });
+  listCacheManager.invalidate();
+  itemCacheManager.invalidate();
 }
 
 /**

@@ -1,20 +1,34 @@
 import { api } from '@/lib/api';
 import { ZonesResponse, Zone } from '@/types/api';
 import { syncZone } from './sync';
+import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
+import { createListService, activeResourceCacheKeyGenerator } from './list-service-factory';
+import { stripTimestampSuffix } from './query-builder';
 
-// In-memory cache for zone data
-interface ZoneCache {
-  activeZones?: {
-    data: ZonesResponse;
-    timestamp: number;
-    expiresIn: number; // milliseconds
-  }
-}
+// Cache manager for zone lists
+const listCacheManager = createCacheManager<ZonesResponse>();
 
-const cache: ZoneCache = {};
-
-// Cache duration (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
+// Create the generic list service for zones
+const zoneListService = createListService<ZonesResponse, {
+  status?: 'active' | 'inactive';
+  limit?: number;
+  offset?: number;
+  sort?: string;
+  order?: 'asc' | 'desc';
+  useCache?: boolean;
+  _t?: string;
+}>({
+  endpoint: '/api/zones',
+  cacheKeyGenerator: activeResourceCacheKeyGenerator('Zones'),
+  cacheDuration: DEFAULT_CACHE_DURATION,
+  cacheManager: listCacheManager,
+  queryConfig: {
+    transforms: {
+      sort: stripTimestampSuffix,
+    },
+    omit: ['useCache'],
+  },
+});
 
 /**
  * Fetch zones with optional filtering options
@@ -28,74 +42,7 @@ export async function getZones(options?: {
   useCache?: boolean;
   _t?: string; // Timestamp for cache busting
 }): Promise<ZonesResponse> {
-  // Check if we can use cached data for active zones
-  if (
-    options?.useCache !== false &&
-    options?.status === 'active' && 
-    options?.limit === 1 && 
-    options?.sort === 'created_at' && 
-    options?.order === 'desc' &&
-    cache.activeZones &&
-    Date.now() - cache.activeZones.timestamp < cache.activeZones.expiresIn
-  ) {
-    return cache.activeZones.data;
-  }
-
-  // Build query parameters
-  const queryParams = new URLSearchParams();
-  
-  if (options?.status) {
-    queryParams.append('status', options.status);
-  }
-  
-  if (options?.limit) {
-    queryParams.append('limit', options.limit.toString());
-  }
-  
-  if (options?.offset) {
-    queryParams.append('offset', options.offset.toString());
-  }
-  
-  if (options?.sort) {
-    // Handle timestamp-added sort parameters by extracting the base sort field
-    // Safely handle 'created_at' with timestamp appended
-    let sortField = options.sort;
-    
-    // If the sort parameter has a timestamp appended (for cache busting)
-    if (sortField.startsWith('created_at_')) {
-      sortField = 'created_at';
-    }
-    
-    queryParams.append('sort', sortField);
-  }
-  
-  if (options?.order) {
-    queryParams.append('order', options.order);
-  }
-  
-  // Add timestamp for cache busting if provided
-  if (options?._t) {
-    queryParams.append('_t', options._t);
-  }
-  
-  const endpoint = `/api/zones${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-  const response = await api.get<ZonesResponse>(endpoint);
-
-  // Cache active zones data
-  if (
-    options?.status === 'active' && 
-    options?.limit === 1 && 
-    options?.sort === 'created_at' && 
-    options?.order === 'desc'
-  ) {
-    cache.activeZones = {
-      data: response,
-      timestamp: Date.now(),
-      expiresIn: CACHE_DURATION
-    };
-  }
-
-  return response;
+  return zoneListService.fetch(options);
 }
 
 /**
@@ -159,9 +106,7 @@ export async function createZone(zoneData: {
   };
   
   // Invalidate all cache after creating a new zone
-  Object.keys(cache).forEach(key => {
-    delete cache[key as keyof ZoneCache];
-  });
+  listCacheManager.invalidate();
   
   // Sync newly created zone to KV storage (id may be number or UUID string)
   try {
@@ -192,9 +137,7 @@ export async function updateZone(
     const response = await api.put<{ zone: Zone }>(`/api/zones/${id}`, zoneData);
     
     // Invalidate all cache after updating a zone
-    Object.keys(cache).forEach(key => {
-      delete cache[key as keyof ZoneCache];
-    });
+    listCacheManager.invalidate();
     
     // Sync zone to KV storage after any update (status, name, URLs, etc.)
     try {
@@ -217,9 +160,8 @@ export async function updateZone(
 export async function deleteZone(id: number | string): Promise<void> {
   await api.delete(`/api/zones/${id}`);
 
-  Object.keys(cache).forEach(key => {
-    delete cache[key as keyof ZoneCache];
-  });
+  // Invalidate all cache after deleting a zone
+  listCacheManager.invalidate();
 }
 
 /**

@@ -16,20 +16,10 @@ interface SyncStateResponse {
   last_updated: string;
 }
 
+import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
+
 // In-memory cache for stats data (keyed by full request params so groupBy/filters changes refetch)
-interface StatsCache {
-  cachedStats?: {
-    key: string;
-    data: StatsResponse;
-    timestamp: number;
-    expiresIn: number; // milliseconds
-  };
-}
-
-const cache: StatsCache = {};
-
-// Cache duration (5 minutes)
-const CACHE_DURATION = 5 * 60 * 1000;
+const statsCacheManager = createCacheManager<StatsResponse>();
 
 /**
  * Get current calendar date (y, m, d) in the given timezone.
@@ -91,13 +81,11 @@ export async function getStats(options: {
   const cacheKey = generateCacheKey(options);
 
   // Check cache (same key required so changing groupBy/filters triggers a new request)
-  if (
-    options.useCache !== false &&
-    cache.cachedStats &&
-    cache.cachedStats.key === cacheKey &&
-    Date.now() - cache.cachedStats.timestamp < cache.cachedStats.expiresIn
-  ) {
-    return cache.cachedStats.data;
+  if (options.useCache !== false) {
+    const cached = statsCacheManager.get(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
   }
 
   // Build query parameters
@@ -125,12 +113,8 @@ export async function getStats(options: {
   try {
     const response = await api.get<StatsResponse>(endpoint);
 
-    cache.cachedStats = {
-      key: cacheKey,
-      data: response,
-      timestamp: Date.now(),
-      expiresIn: CACHE_DURATION
-    };
+    // Cache the response with generated key
+    statsCacheManager.set(cacheKey, response, DEFAULT_CACHE_DURATION);
 
     return response;
   } catch (error) {
