@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { useUserIdentity } from "@/lib/use-user-identity";
-import { listApiKeys, createApiKey, type ApiKey, type CreateApiKeyRequest } from "@/lib/services/api-keys";
+import { listApiKeys, createApiKey, deleteApiKey, type ApiKey, type CreateApiKeyRequest } from "@/lib/services/api-keys";
 import { formatDistanceToNow } from "date-fns";
 
 export default function TeamPage() {
@@ -44,6 +44,8 @@ export default function TeamPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [keyToRevoke, setKeyToRevoke] = useState<ApiKey | null>(null);
+  const [isRevoking, setIsRevoking] = useState(false);
   
   // Form state
   const [email, setEmail] = useState("");
@@ -141,6 +143,36 @@ export default function TeamPage() {
         ? prev.filter((p) => p !== permission)
         : [...prev, permission]
     );
+  };
+
+  const handleRevokeClick = (key: ApiKey) => {
+    setKeyToRevoke(key);
+  };
+
+  const handleRevokeConfirm = async () => {
+    if (!keyToRevoke) return;
+    setIsRevoking(true);
+    try {
+      await deleteApiKey(keyToRevoke.token);
+      setApiKeys((prev) => prev.filter((k) => k.token !== keyToRevoke.token));
+      setKeyToRevoke(null);
+      toast({
+        title: "Team member removed",
+        description: `${keyToRevoke.email || "Key"} has been revoked.`,
+      });
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to remove team member",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRevoking(false);
+    }
+  };
+
+  const handleRevokeCancel = () => {
+    if (!isRevoking) setKeyToRevoke(null);
   };
 
   const copyToken = async (token: string) => {
@@ -387,9 +419,9 @@ export default function TeamPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0"
-                      disabled
-                      title="Remove team member (coming soon)"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleRevokeClick(key)}
+                      title="Remove team member"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -400,6 +432,25 @@ export default function TeamPage() {
           </Table>
         </div>
       )}
+
+      <Dialog open={!!keyToRevoke} onOpenChange={(open) => !open && handleRevokeCancel()}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Remove team member</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to revoke access for {keyToRevoke?.email || "this key"}? They will lose access immediately. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={handleRevokeCancel} disabled={isRevoking}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleRevokeConfirm} disabled={isRevoking}>
+              {isRevoking ? "Revoking..." : "Revoke access"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

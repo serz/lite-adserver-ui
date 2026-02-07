@@ -301,8 +301,8 @@ export class ApiClient {
     return this.request<T>(endpoint, 'PUT', data);
   }
 
-  async delete<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, 'DELETE');
+  async delete<T>(endpoint: string, data?: unknown): Promise<T> {
+    return this.request<T>(endpoint, 'DELETE', data);
   }
 }
 

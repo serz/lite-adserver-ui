@@ -64,9 +64,9 @@ export async function createMachineApiKey(data: CreateMachineApiKeyRequest): Pro
 }
 
 /**
- * Delete an API key (remove team member)
- * Note: This endpoint may need to be implemented on the backend
+ * Revoke an API key (remove team member).
+ * Calls DELETE /api/api-keys with body { token }. Caller must be owner or manager.
  */
 export async function deleteApiKey(token: string): Promise<void> {
-  return api.delete<void>(`/api/api-keys/${token}`);
+  return api.delete<void>('/api/api-keys', { token });
 }

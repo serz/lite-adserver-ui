@@ -66,7 +66,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
         {/* Campaign Stats Card */}
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-primary/10 bg-card p-4 shadow-glow-card sm:p-6 transition-shadow hover:shadow-[var(--glow-primary)]">
           <h3 className="mb-2 text-lg font-medium">Campaigns</h3>
           <div className="text-3xl font-bold">
             {statsLoading ? (
@@ -96,7 +96,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Zones Stats Card */}
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-primary/10 bg-card p-4 shadow-glow-card sm:p-6 transition-shadow hover:shadow-[var(--glow-secondary)]">
           <h3 className="mb-2 text-lg font-medium">Zones</h3>
           <div className="text-3xl font-bold">
             {statsLoading ? (
@@ -114,7 +114,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Impressions Card */}
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-primary/10 bg-card p-4 shadow-glow-card sm:p-6 transition-shadow hover:shadow-[var(--glow-primary)]">
           <h3 className="mb-2 text-lg font-medium">Impressions</h3>
           <div className="text-3xl font-bold">
             {statsLoading ? (
@@ -132,7 +132,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Clicks Card */}
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-primary/10 bg-card p-4 shadow-glow-card sm:p-6 transition-shadow hover:shadow-[var(--glow-secondary)]">
           <h3 className="mb-2 text-lg font-medium">Clicks</h3>
           <div className="text-3xl font-bold">
             {statsLoading ? (
@@ -150,7 +150,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Conversions Card */}
-        <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-6">
+        <div className="rounded-lg border border-primary/10 bg-card p-4 shadow-glow-card sm:p-6 transition-shadow hover:shadow-[var(--glow-primary)]">
           <h3 className="mb-2 text-lg font-medium">Conversions</h3>
           <div className="text-3xl font-bold">
             {statsLoading ? (

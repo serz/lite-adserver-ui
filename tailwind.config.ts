@@ -55,6 +55,8 @@ const config: Config = {
       },
       boxShadow: {
         "glow-primary": "var(--glow-primary)",
+        "glow-secondary": "var(--glow-secondary)",
+        "glow-card": "var(--glow-card)",
       },
       borderRadius: {
         lg: "var(--radius)",
