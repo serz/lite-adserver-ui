@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import {
   getCampaign,
@@ -27,6 +28,7 @@ import { Campaign } from "@/types/api";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useCampaigns } from "@/lib/context/campaign-context";
+import { useUserIdentity } from "@/lib/use-user-identity";
 
 interface EditCampaignClientProps {
   campaignId: number;
@@ -37,6 +39,7 @@ export default function EditCampaignClient({
 }: EditCampaignClientProps) {
   const router = useRouter();
   const { toast } = useToast();
+  const { role } = useUserIdentity();
   const { refetchCampaigns } = useCampaigns();
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [initialValues, setInitialValues] = useState<CampaignFormValues | null>(
@@ -50,6 +53,22 @@ export default function EditCampaignClient({
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (role === "publisher") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">Edit Campaign</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            You don&apos;t have permission to edit campaigns. This section is for advertisers and managers.
+          </p>
+          <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     const loadCampaignData = async () => {

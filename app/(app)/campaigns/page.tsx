@@ -19,10 +19,28 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { getTargetingRuleTypes } from "@/lib/services/targeting-rule-types";
 import { useCampaigns } from '@/lib/context/campaign-context';
+import { useUserIdentity } from '@/lib/use-user-identity';
 
 export default function CampaignsPage() {
   const { toast } = useToast();
+  const { role } = useUserIdentity();
   const { listData, refetchCampaigns } = useCampaigns();
+
+  if (role === "publisher") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">Campaigns</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            You don&apos;t have permission to view campaigns. This section is for advertisers and managers.
+          </p>
+          <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
   
   const [expandedCampaigns, setExpandedCampaigns] = useState<{[campaignId: number]: boolean}>({});
   const [targetingRulesByCampaign, setTargetingRulesByCampaign] = useState<{[campaignId: number]: TargetingRule[]}>({});

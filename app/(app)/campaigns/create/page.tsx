@@ -2,18 +2,37 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import { createCampaign, createPayoutRule } from "@/lib/services/campaigns";
 import { getTimezone, getUtcMsForStartOfDayInTimezone, getUtcMsForEndOfDayInTimezone } from "@/lib/timezone";
 import { CampaignForm } from "@/components/campaign-form";
 import { CampaignFormValues, TargetingRuleTypeIds, formToTargetingRules } from "@/lib/schemas/campaign";
 import { useCampaigns } from "@/lib/context/campaign-context";
+import { useUserIdentity } from "@/lib/use-user-identity";
 
 export default function CreateCampaignPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { role } = useUserIdentity();
   const { refetchCampaigns } = useCampaigns();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (role === "publisher") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">New Campaign</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            You don&apos;t have permission to create campaigns. This section is for advertisers and managers.
+          </p>
+          <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (
     values: CampaignFormValues,

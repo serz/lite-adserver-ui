@@ -59,14 +59,19 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     setSidebarOpen(false);
   }, [pathname]);
 
-  // Navigation items
-  const navItems = [
+  // Navigation items (Zones hidden for advertiser; Campaigns hidden for publisher)
+  const allNavItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Campaigns", href: "/campaigns", icon: Layers },
     { name: "Zones", href: "/zones", icon: Users },
     { name: "Statistics", href: "/stats", icon: BarChart3 },
     { name: "Conversions", href: "/conversions", icon: MousePointerClick },
   ];
+  const navItems = allNavItems.filter((item) => {
+    if (item.href === "/zones" && role === "advertiser") return false;
+    if (item.href === "/campaigns" && role === "publisher") return false;
+    return true;
+  });
 
   const handleSignOut = (e: React.MouseEvent) => {
     e.preventDefault();

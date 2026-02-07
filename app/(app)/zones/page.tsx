@@ -37,6 +37,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import Link from "next/link";
 import { useZones } from '@/lib/context/zone-context';
 
 /** Shown inside the embed code modal when user is owner/manager and there are no active campaigns. */
@@ -77,7 +78,24 @@ function NoActiveCampaignsBanner() {
 
 export default function ZonesPage() {
   const { toast } = useToast();
+  const { role } = useUserIdentity();
   const { listData, refetchZones } = useZones();
+
+  if (role === "advertiser") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">Zones</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            You don&apos;t have permission to view zones. This section is for publishers and managers.
+          </p>
+          <Link href="/dashboard" className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
   
   const [copiedZoneId, setCopiedZoneId] = useState<number | string | null>(null);
   const [embedSubIdByZone, setEmbedSubIdByZone] = useState<Record<string, string>>({});
