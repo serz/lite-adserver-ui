@@ -141,7 +141,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               {!accountDropdownMounted ? (
                 <Button variant="ghost" size="sm" className="gap-1.5">
                   <CircleUser className="h-4 w-4 shrink-0" />
-                  <span className="max-w-[140px] truncate sm:max-w-[200px]">Account</span>
+                  <span className="max-w-[140px] truncate sm:max-w-[200px]">{userIdentity?.email}</span>
                   <ChevronDown className="h-4 w-4 shrink-0 opacity-70" />
                 </Button>
               ) : (
