@@ -28,6 +28,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { logout, userIdentity, isAuthReady, isAuthenticated } = useAuth();
   const { company, isLoading: tenantLoading } = useTenantSettings();
+  const role = userIdentity?.role ?? null;
+  const isOwner = role === "owner";
+  const canAccessTeam = role === "owner" || role === "manager";
 
   useEffect(() => setAccountDropdownMounted(true), []);
 
@@ -159,24 +162,30 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
-                        <Settings className="h-4 w-4" />
-                        Platform Settings
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/billing" className="flex items-center gap-2 cursor-pointer">
-                        <CreditCard className="h-4 w-4" />
-                        Billing
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/team" className="flex items-center gap-2 cursor-pointer">
-                        <UserPlus className="h-4 w-4" />
-                        Team
-                      </Link>
-                    </DropdownMenuItem>
+                    {isOwner && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
+                          <Settings className="h-4 w-4" />
+                          Platform Settings
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {isOwner && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/billing" className="flex items-center gap-2 cursor-pointer">
+                          <CreditCard className="h-4 w-4" />
+                          Billing
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {canAccessTeam && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/team" className="flex items-center gap-2 cursor-pointer">
+                          <UserPlus className="h-4 w-4" />
+                          Team
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem asChild>
                       <Link href="/api" className="flex items-center gap-2 cursor-pointer">
                         <Key className="h-4 w-4" />

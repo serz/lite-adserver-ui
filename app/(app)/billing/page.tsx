@@ -1,8 +1,24 @@
 "use client";
 
 import { CreditCard } from "lucide-react";
+import { useUserIdentity } from "@/lib/use-user-identity";
 
 export default function BillingPage() {
+  const { role } = useUserIdentity();
+
+  if (role != null && role !== "owner") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">Billing</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            Only owners can access billing.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">Billing</h1>

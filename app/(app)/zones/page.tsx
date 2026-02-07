@@ -8,8 +8,10 @@ import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { ZoneDialog } from '@/components/zone-dialog';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Pencil, Power, Code, Copy, Check, Trash2 } from 'lucide-react';
+import { RefreshCw, Pencil, Power, Code, Copy, Check, Trash2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUserIdentity } from '@/lib/use-user-identity';
+import { getActiveCampaigns } from '@/lib/services/campaigns';
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -36,6 +38,42 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useZones } from '@/lib/context/zone-context';
+
+/** Shown inside the embed code modal when user is owner/manager and there are no active campaigns. */
+function NoActiveCampaignsBanner() {
+  const { role } = useUserIdentity();
+  const [hasActiveCampaigns, setHasActiveCampaigns] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (role !== 'owner' && role !== 'manager') {
+      setHasActiveCampaigns(true);
+      return;
+    }
+    let cancelled = false;
+    getActiveCampaigns(1)
+      .then((res) => {
+        if (!cancelled) setHasActiveCampaigns((res.campaigns?.length ?? 0) > 0);
+      })
+      .catch(() => {
+        if (!cancelled) setHasActiveCampaigns(null);
+      });
+    return () => { cancelled = true; };
+  }, [role]);
+
+  if (hasActiveCampaigns !== false) return null;
+
+  return (
+    <div className="mb-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+      <Info className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+      <div className="text-sm">
+        <p className="font-medium">No running campaigns</p>
+        <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/90">
+          There are no active campaigns in the system. Ads will not be served until at least one campaign is running. Consider activating a campaign in the Campaigns section.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default function ZonesPage() {
   const { toast } = useToast();
@@ -294,6 +332,7 @@ export default function ZonesPage() {
                           <DialogHeader>
                             <DialogTitle>Zone Embed URL</DialogTitle>
                           </DialogHeader>
+                          <NoActiveCampaignsBanner />
                           <div className="mt-4 space-y-3">
                             <div className="flex items-center p-2 bg-muted rounded-md overflow-auto">
                               <code className="text-sm flex-1 break-all">{getEmbedUrl(zone.id, embedSubIdByZone[String(zone.id)] ?? '')}</code>

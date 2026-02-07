@@ -198,7 +198,6 @@ Content-Type: application/json
 
 ## Future Enhancements
 
-- [ ] Delete/revoke team members (button currently disabled)
 - [ ] Edit team member role/permissions
 - [ ] Set expiration date when creating keys
 - [ ] Resend/regenerate API keys
@@ -211,23 +210,3 @@ Content-Type: application/json
 - **Page:** `app/(app)/team/page.tsx`
 - **Types:** Defined in service file
 - **Hook:** Uses `useUserIdentity()` to check permissions
-
-## Testing Checklist
-
-- [ ] Owner can access Team page
-- [ ] Manager can access Team page
-- [ ] Publisher sees access denied
-- [ ] Advertiser sees access denied
-- [ ] Can view list of team members
-- [ ] Can add new team member with email
-- [ ] Role dropdown shows all 4 roles
-- [ ] Read permission is always checked and disabled
-- [ ] Write permission can be toggled
-- [ ] Form validation requires email
-- [ ] Toast shows success message after creation
-- [ ] New member appears in table after creation
-- [ ] "Copy token" button copies API key to clipboard
-- [ ] Button shows "Copied" with checkmark after clicking
-- [ ] Can copy different users' tokens
-- [ ] Role badges have correct colors
-- [ ] Dates show relative time (e.g., "2 days ago")

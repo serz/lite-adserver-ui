@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useTenantSettings } from "@/lib/use-tenant-settings";
+import { useUserIdentity } from "@/lib/use-user-identity";
 import { getTenantSettings, updateTenantSettings } from "@/lib/services/tenant";
 import { getTimezoneOptionsWithCurrent } from "@/lib/timezones";
 import { Globe } from "lucide-react";
@@ -35,6 +36,7 @@ const COLOR_PRESETS = [
 export default function SettingsPage() {
   const { toast } = useToast();
   const { refetch } = useTenantSettings();
+  const { role } = useUserIdentity();
 
   const [company, setCompany] = useState("");
   const [timezone, setTimezone] = useState("");
@@ -120,6 +122,19 @@ export default function SettingsPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (role != null && role !== "owner") {
+    return (
+      <div className="container mx-auto min-w-0 max-w-full p-6">
+        <h1 className="mb-6 text-2xl font-bold md:text-3xl">Platform Settings</h1>
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <p className="text-sm text-destructive">
+            Only owners can access platform settings.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (formLoading) {
     return (

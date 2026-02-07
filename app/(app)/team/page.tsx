@@ -36,7 +36,7 @@ import { formatDistanceToNow } from "date-fns";
 
 export default function TeamPage() {
   const { toast } = useToast();
-  const { role, permissions } = useUserIdentity();
+  const { role, permissions, email: currentUserEmail, userId: currentUserId } = useUserIdentity();
   
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -416,15 +416,19 @@ export default function TeamPage() {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleRevokeClick(key)}
-                      title="Remove team member"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {((key.email && key.email === currentUserEmail) || (key.user_id && currentUserId && key.user_id === currentUserId)) ? (
+                      <span className="text-muted-foreground/50 text-xs">(you)</span>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRevokeClick(key)}
+                        title="Remove team member"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}

@@ -2,8 +2,12 @@
 
 import { Key } from "lucide-react";
 import { ConversionTrackingSection } from "@/components/conversion-tracking-section";
+import { useUserIdentity } from "@/lib/use-user-identity";
 
 export default function ApiPage() {
+  const { role } = useUserIdentity();
+  const showConversionTracking = role !== "publisher";
+
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
       <h1 className="mb-6 text-2xl font-bold md:text-3xl">API</h1>
@@ -17,10 +21,12 @@ export default function ApiPage() {
             API documentation and keys management will be available here.
           </p>
         </div>
-        <div>
-          <h2 className="text-lg font-semibold mb-2">Conversion tracking</h2>
-          <ConversionTrackingSection />
-        </div>
+        {showConversionTracking && (
+          <div>
+            <h2 className="text-lg font-semibold mb-2">Conversion tracking</h2>
+            <ConversionTrackingSection />
+          </div>
+        )}
       </div>
     </div>
   );
