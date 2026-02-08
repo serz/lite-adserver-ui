@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useCampaigns } from '@/lib/context/campaign-context';
 import { useZones } from '@/lib/context/zone-context';
+import { useUserIdentity } from '@/lib/use-user-identity';
 import { Campaign, Zone } from '@/types/api';
 import { Layers, Users } from 'lucide-react';
 import { Badge, BadgeProps } from '@/components/ui/badge';
@@ -20,31 +21,35 @@ type ActivityItem = {
 };
 
 export function RecentActivity() {
+  const { role } = useUserIdentity();
   const { recentActiveCampaigns, isLoading: campaignsLoading, error: campaignsError } = useCampaigns();
   const { recentActiveZones, isLoading: zonesLoading, error: zonesError } = useZones();
 
-  const isLoading = campaignsLoading || zonesLoading;
+  const isAdvertiser = role === 'advertiser';
+  const isPublisher = role === 'publisher';
+  const isLoading = isAdvertiser ? campaignsLoading : isPublisher ? zonesLoading : (campaignsLoading || zonesLoading);
   const hasError = campaignsError || zonesError;
 
-  // Format all recent activity items
-  const activityItems: ActivityItem[] = [
-    ...recentActiveCampaigns.map((campaign: Campaign) => ({
-      id: campaign.id,
-      name: campaign.name,
-      type: 'campaign' as const,
-      created_at: campaign.created_at,
-      status: campaign.status,
-      url: `/campaigns/edit/${campaign.id}`,
-    })),
-    ...recentActiveZones.map((zone: Zone) => ({
-      id: zone.id,
-      name: zone.name,
-      type: 'zone' as const, 
-      created_at: zone.created_at,
-      status: zone.status,
-      url: `/zones`,
-    })),
-  ].sort((a, b) => b.created_at - a.created_at).slice(0, 5);
+  // Build activity items by role: advertiser = campaigns only, publisher = zones only, else both
+  const campaignItems: ActivityItem[] = recentActiveCampaigns.map((campaign: Campaign) => ({
+    id: campaign.id,
+    name: campaign.name,
+    type: 'campaign' as const,
+    created_at: campaign.created_at,
+    status: campaign.status,
+    url: `/campaigns/edit/${campaign.id}`,
+  }));
+  const zoneItems: ActivityItem[] = recentActiveZones.map((zone: Zone) => ({
+    id: zone.id,
+    name: zone.name,
+    type: 'zone' as const,
+    created_at: zone.created_at,
+    status: zone.status,
+    url: `/zones`,
+  }));
+  const activityItems: ActivityItem[] = (
+    isAdvertiser ? campaignItems : isPublisher ? zoneItems : [...campaignItems, ...zoneItems]
+  ).sort((a, b) => b.created_at - a.created_at).slice(0, 5);
 
   // Helper function to map status to variant
   const getStatusVariant = (status: string): BadgeProps['variant'] => {
@@ -87,17 +92,33 @@ export function RecentActivity() {
   }
 
   if (activityItems.length === 0) {
+    const isAdvertiser = role === 'advertiser';
+    const isPublisher = role === 'publisher';
+
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-10 px-6 text-center">
         <p className="text-muted-foreground mb-1">No recent activity yet.</p>
         <p className="text-sm text-muted-foreground mb-4 max-w-sm">
-          Create your first campaign or add a zone to see activity here.
+          {isAdvertiser && 'Create your first campaign to see activity here.'}
+          {isPublisher && 'Add a zone to see activity here.'}
+          {!isAdvertiser && !isPublisher && 'Create your first campaign or add a zone to see activity here.'}
         </p>
-        <Link href="/campaigns/create">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
-            Create Campaign
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {!isPublisher && (
+            <Link href="/campaigns/create">
+              <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+                Create Campaign
+              </Button>
+            </Link>
+          )}
+          {!isAdvertiser && (
+            <Link href="/zones">
+              <Button variant={isPublisher ? 'default' : 'outline'} className={isPublisher ? 'bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow' : ''}>
+                Manage Zones
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
     );
   }

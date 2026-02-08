@@ -4,6 +4,7 @@ import { StatsTable } from '@/components/stats-table';
 import { useStatsPage } from '@/lib/context/stats-page-context';
 import { useStats } from '@/lib/context/stats-context';
 import { useTenantSettings } from '@/lib/use-tenant-settings';
+import { useUserIdentity } from '@/lib/use-user-identity';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -20,6 +21,7 @@ import { useCallback } from 'react';
 type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 
 export default function StatsPage() {
+  const { role } = useUserIdentity();
   const {
     stats,
     isLoading,
@@ -102,7 +104,7 @@ export default function StatsPage() {
           </div>
         ) : (
           <>
-            <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} />
+            <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} role={role} />
             {timezone && (
               <p className="mt-3 text-xs text-muted-foreground">
                 All dates and daily totals above are shown in your account timezone ({timezone}).

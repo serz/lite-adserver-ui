@@ -36,7 +36,8 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
   const [recentActiveCampaigns, setRecentActiveCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
+  const { isAuthenticated, apiInitialized, isAuthReady, userIdentity } = useAuth();
+  const role = userIdentity?.role ?? null;
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
@@ -68,6 +69,12 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
 
     if (networkErrorRef.current) {
       console.log('Campaign context: Skipping fetch due to previous network error');
+      return;
+    }
+
+    if (role === 'publisher') {
+      dataFetchedRef.current = true;
+      setIsLoading(false);
       return;
     }
     
@@ -117,7 +124,7 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, role]);
 
   useEffect(() => {
     if (isAuthReady && isAuthenticated && apiInitialized) {

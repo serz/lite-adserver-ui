@@ -21,6 +21,8 @@ interface StatsTableProps {
   isLoading: boolean;
   /** When provided, empty state shows zone-aware copy and CTA */
   zonesCount?: number;
+  /** When 'advertiser', empty state shows campaign-only copy and CTA */
+  role?: string | null;
 }
 
 // Define a type for possible stat item based on groupBy
@@ -39,7 +41,7 @@ type StatItem = {
   payout: number;
 };
 
-export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTableProps) {
+export function StatsTable({ data, groupBy, isLoading, zonesCount = 0, role = null }: StatsTableProps) {
   if (isLoading) {
     return (
       <div className="w-full">
@@ -52,25 +54,37 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0 }: StatsTa
   }
   
   if (!data || !data.stats || data.stats.length === 0) {
+    const isAdvertiser = role === 'advertiser';
     const hasZones = zonesCount > 0;
+
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-muted-foreground/25 bg-muted/30 py-12 px-6 text-center">
         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary mb-4">
           <BarChart3 className="h-6 w-6" />
         </div>
         <p className="text-lg font-medium text-foreground mb-1">
-          {hasZones ? 'No stats for this period yet' : 'No stats yet'}
+          {isAdvertiser ? 'No stats yet' : hasZones ? 'No stats for this period yet' : 'No stats yet'}
         </p>
         <p className="text-muted-foreground mb-6 max-w-sm text-sm">
-          {hasZones
-            ? 'Get your ad link from Zones and start serving ads to see statistics here.'
-            : 'Create a zone and add the ad code to your site to start seeing statistics.'}
+          {isAdvertiser
+            ? 'Create and activate a campaign to start seeing statistics here.'
+            : hasZones
+              ? 'Get your ad link from Zones and start serving ads to see statistics here.'
+              : 'Create a zone and add the ad code to your site to start seeing statistics.'}
         </p>
-        <Link href="/zones">
-          <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
-            Go to Zones
-          </Button>
-        </Link>
+        {isAdvertiser ? (
+          <Link href="/campaigns">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+              Go to Campaigns
+            </Button>
+          </Link>
+        ) : (
+          <Link href="/zones">
+            <Button className="bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm hover:shadow-glow-primary transition-shadow">
+              Go to Zones
+            </Button>
+          </Link>
+        )}
       </div>
     );
   }

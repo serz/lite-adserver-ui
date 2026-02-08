@@ -36,7 +36,8 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   const [recentActiveZones, setRecentActiveZones] = useState<Zone[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
+  const { isAuthenticated, apiInitialized, isAuthReady, userIdentity } = useAuth();
+  const role = userIdentity?.role ?? null;
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
@@ -68,6 +69,12 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
 
     if (networkErrorRef.current) {
       console.log('Zone context: Skipping fetch due to previous network error');
+      return;
+    }
+
+    if (role === 'advertiser') {
+      dataFetchedRef.current = true;
+      setIsLoading(false);
       return;
     }
     
@@ -117,7 +124,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, role]);
 
   useEffect(() => {
     console.log('Zone context: useEffect triggered', { isAuthReady, isAuthenticated, apiInitialized });
