@@ -70,6 +70,7 @@ export default function ConversionsPage() {
           offset,
           sort,
           order,
+          useCache: forceFetch ? false : true,
         });
         setConversions(response.conversions);
         setTotalItems(response.pagination.total);

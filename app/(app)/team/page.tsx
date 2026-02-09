@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, Trash2, Key, Mail, Shield, Calendar, Copy, Check } from "lucide-react";
+import { UserPlus, Trash2, Key, Mail, Shield, Calendar, Copy, Check, Info, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +46,7 @@ export default function TeamPage() {
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [keyToRevoke, setKeyToRevoke] = useState<ApiKey | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
+  const [showNewMemberHint, setShowNewMemberHint] = useState(false);
   
   // Form state
   const [email, setEmail] = useState("");
@@ -105,12 +106,15 @@ export default function TeamPage() {
         permissions,
       };
 
-      const createdKey = await createApiKey(newKey);
+      await createApiKey(newKey);
       
       toast({
         title: "Team member added",
         description: `${email} has been added to your team.`,
       });
+
+      setShowNewMemberHint(true);
+      setTimeout(() => setShowNewMemberHint(false), 90_000);
 
       // Reset form
       setEmail("");
@@ -118,7 +122,6 @@ export default function TeamPage() {
       setSelectedPermissions(["read", "write"]);
       setIsDialogOpen(false);
       
-      // Reload team members
       loadTeamMembers();
     } catch (err) {
       console.error("Failed to create team member:", err);
@@ -154,11 +157,11 @@ export default function TeamPage() {
     setIsRevoking(true);
     try {
       await deleteApiKey(keyToRevoke.token);
-      setApiKeys((prev) => prev.filter((k) => k.token !== keyToRevoke.token));
       setKeyToRevoke(null);
+      await loadTeamMembers();
       toast({
-        title: "Team member removed",
-        description: `${keyToRevoke.email || "Key"} has been revoked.`,
+        title: "Access revoked",
+        description: `${keyToRevoke.email || "Key"} has been revoked. They can no longer sign in.`,
       });
     } catch (err) {
       toast({
@@ -327,6 +330,27 @@ export default function TeamPage() {
         </div>
       )}
 
+      {showNewMemberHint && (
+        <div className="mb-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+          <Info className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+          <div className="text-sm flex-1">
+            <p className="font-medium">New member added</p>
+            <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/90">
+              They may take up to a minute to appear in the list below. Refresh the page if you don&apos;t see them yet.
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 flex-shrink-0 text-amber-700 hover:bg-amber-200/50 dark:text-amber-300 dark:hover:bg-amber-800/50"
+            onClick={() => setShowNewMemberHint(false)}
+            aria-label="Dismiss"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+
       {isLoading ? (
         <div className="rounded-lg border bg-card p-8 text-center">
           <p className="text-muted-foreground">Loading team members...</p>
@@ -418,13 +442,15 @@ export default function TeamPage() {
                   <TableCell>
                     {((key.email && key.email === currentUserEmail) || (key.user_id && currentUserId && key.user_id === currentUserId)) ? (
                       <span className="text-muted-foreground/50 text-xs">(you)</span>
+                    ) : (key.expires_at != null && new Date(key.expires_at).getTime() <= Date.now()) ? (
+                      <span className="text-muted-foreground/50 text-xs">Revoked</span>
                     ) : (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleRevokeClick(key)}
-                        title="Remove team member"
+                        title="Revoke access"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

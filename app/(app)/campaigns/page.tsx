@@ -6,7 +6,7 @@ import { Campaign, TargetingRule, TargetingRuleType } from '@/types/api';
 import { Badge, BadgeProps } from '@/components/ui/badge';
 import { formatDate } from '@/lib/date-utils';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Play, Pause, Edit, ChevronRight, ChevronDown, Trash2 } from 'lucide-react';
+import { RefreshCw, Play, Pause, Edit, ChevronRight, ChevronDown, Trash2, Info } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -243,6 +243,18 @@ export default function CampaignsPage() {
           </Link>
         </div>
       ) : (
+        <>
+          {campaigns.length > 0 && !campaigns.some((c) => c.status === 'active') && (
+            <div className="mb-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200">
+              <Info className="h-5 w-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+              <div className="text-sm">
+                <p className="font-medium">No campaigns are running</p>
+                <p className="mt-0.5 text-amber-800/90 dark:text-amber-200/90">
+                  You have campaigns but none are active. Ads will not be served until you start at least one campaign. Use the play button next to a campaign to activate it.
+                </p>
+              </div>
+            </div>
+          )}
         <div className="min-w-0 overflow-x-auto rounded-md border bg-card [-webkit-overflow-scrolling:touch]">
           <table className="w-full min-w-[640px]">
             <thead>
@@ -351,6 +363,7 @@ export default function CampaignsPage() {
             </tbody>
           </table>
         </div>
+        </>
       )}
 
       <Dialog open={!!campaignToDelete} onOpenChange={(open) => !open && handleDeleteCancel()}>
