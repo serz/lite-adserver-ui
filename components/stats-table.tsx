@@ -114,6 +114,9 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0, role = nu
     }
     return item[groupBy] || 'Unknown';
   };
+
+  const showSpend = role !== 'publisher';
+  const showPayout = role !== 'advertiser';
   
   return (
     <div className="min-w-0 overflow-x-auto rounded-md border [-webkit-overflow-scrolling:touch]">
@@ -126,8 +129,8 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0, role = nu
             <TableHead className="text-right">Unsold</TableHead>
             <TableHead className="text-right">Clicks</TableHead>
             <TableHead className="text-right">Conversions</TableHead>
-            <TableHead className="text-right">Spend</TableHead>
-            <TableHead className="text-right">Payout</TableHead>
+            {showSpend && <TableHead className="text-right">Spend</TableHead>}
+            {showPayout && <TableHead className="text-right">Payout</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -139,8 +142,8 @@ export function StatsTable({ data, groupBy, isLoading, zonesCount = 0, role = nu
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.unsold)}</TableCell>
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.clicks)}</TableCell>
               <TableCell className="text-right">{new Intl.NumberFormat().format(item.conversions)}</TableCell>
-              <TableCell className="text-right">{new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.spend ?? 0)}</TableCell>
-              <TableCell className="text-right">{new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.payout ?? 0)}</TableCell>
+              {showSpend && <TableCell className="text-right">{new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.spend ?? 0)}</TableCell>}
+              {showPayout && <TableCell className="text-right">{new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(item.payout ?? 0)}</TableCell>}
             </TableRow>
           ))}
         </TableBody>
