@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, Trash2, Key, Mail, Shield, Calendar, Copy, Check, Info, X } from "lucide-react";
+import { UserPlus, Trash2, Key, Mail, Shield, Calendar, Copy, Check, Info, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,6 +178,10 @@ export default function TeamPage() {
     if (!isRevoking) setKeyToRevoke(null);
   };
 
+  const handleRefresh = () => {
+    loadTeamMembers();
+  };
+
   const copyToken = async (token: string) => {
     try {
       await navigator.clipboard.writeText(token);
@@ -230,8 +234,19 @@ export default function TeamPage() {
 
   return (
     <div className="container mx-auto min-w-0 max-w-full p-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold md:text-3xl">Team</h1>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold md:text-3xl">Team</h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            title="Refresh team"
+          >
+            <RefreshCw className={`h-5 w-5 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -325,8 +340,11 @@ export default function TeamPage() {
       </div>
 
       {error && (
-        <div className="mb-4 rounded-md bg-destructive/15 p-4 text-sm text-destructive">
-          {error}
+        <div className="mb-4 rounded-md bg-destructive/15 p-4 text-sm text-destructive flex items-center justify-between gap-2 flex-wrap">
+          <span>{error}</span>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            Retry
+          </Button>
         </div>
       )}
 
