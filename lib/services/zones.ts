@@ -1,6 +1,5 @@
 import { api } from '@/lib/api';
 import { ZonesResponse, Zone } from '@/types/api';
-import { syncZone } from './sync';
 import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
 import { createListService, activeResourceCacheKeyGenerator } from './list-service-factory';
 import { stripTimestampSuffix } from './query-builder';
@@ -108,14 +107,6 @@ export async function createZone(zoneData: {
   // Invalidate all cache after creating a new zone
   listCacheManager.invalidate();
   
-  // Sync newly created zone to KV storage (id may be number or UUID string)
-  try {
-    await syncZone(zone.id);
-  } catch (syncError) {
-    console.error(`Failed to sync new zone ${zone.id}:`, syncError);
-    // Don't rethrow, as the zone creation was successful
-  }
-  
   return zone;
 }
 
@@ -138,14 +129,6 @@ export async function updateZone(
     
     // Invalidate all cache after updating a zone
     listCacheManager.invalidate();
-    
-    // Sync zone to KV storage after any update (status, name, URLs, etc.)
-    try {
-      await syncZone(id);
-    } catch (syncError) {
-      console.error(`Failed to sync zone ${id} after update:`, syncError);
-      // Don't rethrow, as the zone update was successful
-    }
     
     return response.zone;
   } catch (error) {

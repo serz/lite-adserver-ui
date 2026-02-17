@@ -74,7 +74,7 @@ Lite Adserver Dashboard is the frontend interface for managing ad campaigns, zon
 │  ┌─────────────────────────────────────────────────────────┐    │
 │  │                    Services Layer                        │    │
 │  │                                                          │    │
-│  │  campaigns.ts │ zones.ts │ stats.ts │ sync.ts │ auth.ts │    │
+│  │  campaigns.ts │ zones.ts │ stats.ts │ auth.ts │           │    │
 │  └─────────────────────────────────────────────────────────┘    │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────────┐    │
@@ -205,7 +205,6 @@ lite-adserver-ui/
 │   │   ├── campaigns.ts          # Campaign API operations
 │   │   ├── zones.ts              # Zone API operations
 │   │   ├── stats.ts              # Statistics API operations
-│   │   ├── sync.ts               # KV sync operations
 │   │   └── targeting-rule-types.ts
 │   └── constants/
 │       └── countries.ts          # Country codes list
@@ -347,10 +346,10 @@ The dashboard communicates with the Lite Adserver backend API. See the [API docu
 | `/api/zones` | GET, POST | List/create zones |
 | `/api/zones/:id` | GET, PUT | Get/update zone |
 | `/api/stats` | GET | Query statistics |
-| `/api/sync/state` | GET | Get system state |
-| `/api/sync/campaigns/:id` | POST | Sync campaign to KV |
-| `/api/sync/zones/:id` | POST | Sync zone to KV |
+| `/api/sync/state` | GET | Get system state (owner/manager only; used for dashboard counts) |
 | `/api/targeting-rule-types` | GET | List targeting rule types |
+
+Campaign and zone sync to KV is triggered by the backend on create/update; the UI does not call sync endpoints.
 
 ### Backend Connection
 
