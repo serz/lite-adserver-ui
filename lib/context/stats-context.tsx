@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { getLast7DaysMetrics, getSyncState } from '@/lib/services/stats';
 import { useAuth } from '@/components/auth-provider';
 import { useTenantSettings } from '@/lib/use-tenant-settings';
+import { useUserIdentity } from '@/lib/use-user-identity';
 
 interface StatsContextType {
   impressions: number;
@@ -28,12 +29,17 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { isAuthenticated, apiInitialized, isAuthReady } = useAuth();
   const { isLoading: tenantSettingsLoading } = useTenantSettings();
+  const { role } = useUserIdentity();
   const dataFetchedRef = useRef(false);
   const networkErrorRef = useRef(false);
 
   const fetchStats = useCallback(async () => {
     if (!isAuthReady || !isAuthenticated || !apiInitialized) {
       console.log('Stats context: Auth not ready, not authenticated, or API not initialized');
+      return;
+    }
+    if (role == null) {
+      console.log('Stats context: Role not yet loaded');
       return;
     }
     // Wait for tenant settings so getTimezone() is correct and "from" is 00:00 7 days ago in tenant TZ
@@ -53,18 +59,22 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     
+    const isOwnerOrManager = role === 'owner' || role === 'manager';
     console.log('Stats context: Fetching stats...');
     setIsLoading(true);
     setError(null);
 
     try {
+      // GET /api/sync/state is only for owners/managers; backend does not filter by campaign/zone ownership
       const [metrics, syncState] = await Promise.all([
         getLast7DaysMetrics(),
-        getSyncState()
+        isOwnerOrManager ? getSyncState() : Promise.resolve({ campaigns: { count: 0 }, zones: { count: 0 } }),
       ]);
       
       console.log('Stats context: Received metrics:', metrics);
-      console.log('Stats context: Received sync state:', syncState);
+      if (isOwnerOrManager) {
+        console.log('Stats context: Received sync state:', syncState);
+      }
       
       setImpressions(metrics.impressions);
       setClicks(metrics.clicks);
@@ -101,13 +111,13 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading]);
+  }, [isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading, role]);
 
   useEffect(() => {
-    if (isAuthReady && isAuthenticated && apiInitialized && !tenantSettingsLoading) {
+    if (isAuthReady && isAuthenticated && apiInitialized && !tenantSettingsLoading && role != null) {
       fetchStats();
     }
-  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading]);
+  }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading, role]);
 
   const refetchStats = useCallback(async () => {
     dataFetchedRef.current = false;

@@ -5,6 +5,7 @@ import { useStatsPage } from '@/lib/context/stats-page-context';
 import { useStats } from '@/lib/context/stats-context';
 import { useTenantSettings } from '@/lib/use-tenant-settings';
 import { useUserIdentity } from '@/lib/use-user-identity';
+import { getActiveZonesCount } from '@/lib/services/zones';
 import { Button } from '@/components/ui/button';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -16,7 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { DateRange } from 'react-day-picker';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 type GroupByOption = 'date' | 'campaign_id' | 'zone_id' | 'country' | 'sub_id';
 
@@ -32,8 +33,16 @@ export default function StatsPage() {
     setGroupBy,
     refetch
   } = useStatsPage();
-  const { zonesCount } = useStats();
+  const { zonesCount: contextZonesCount } = useStats();
   const { timezone } = useTenantSettings();
+
+  // For publishers, use same zone count as dashboard (scoped to their zones); owner/manager use context (sync state)
+  const [publisherZonesCount, setPublisherZonesCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (role !== 'publisher') return;
+    getActiveZonesCount().then(setPublisherZonesCount).catch(() => setPublisherZonesCount(0));
+  }, [role]);
+  const zonesCountForTable = role === 'publisher' ? (publisherZonesCount ?? 0) : contextZonesCount;
 
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     if (range?.from) {
@@ -104,7 +113,7 @@ export default function StatsPage() {
           </div>
         ) : (
           <>
-            <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCount} role={role} />
+            <StatsTable data={stats} groupBy={groupBy} isLoading={isLoading} zonesCount={zonesCountForTable} role={role} />
             {timezone && (
               <p className="mt-3 text-xs text-muted-foreground">
                 All dates and daily totals above are shown in your account timezone ({timezone}).
