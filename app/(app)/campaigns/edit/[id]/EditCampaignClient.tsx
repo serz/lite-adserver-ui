@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useToast } from "@/hooks/use-toast";
 import {
-  getCampaign,
   updateCampaign,
+  updateCampaignTargetingRules,
   getCampaignPayoutRules,
   createPayoutRule,
   deletePayoutRule,
@@ -177,7 +177,7 @@ export default function EditCampaignClient({
 
       // Update targeting rules
       try {
-        await api.post(`/api/campaigns/${campaignId}/targeting_rules`, targetingRules);
+        await updateCampaignTargetingRules(campaignId, targetingRules);
       } catch (targetingError) {
         console.error("Failed to update targeting rules:", targetingError);
         toast({

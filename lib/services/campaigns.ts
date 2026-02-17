@@ -11,6 +11,14 @@ const listCacheManager = createCacheManager<CampaignsResponse>();
 // Cache manager for individual campaigns
 const itemCacheManager = createCacheManager<Campaign>();
 
+async function syncCampaignSafely(campaignId: number, context: string): Promise<void> {
+  try {
+    await syncCampaign(campaignId);
+  } catch (syncError) {
+    console.error(`Failed to sync campaign ${campaignId} after ${context}:`, syncError);
+  }
+}
+
 // Create the generic list service for campaigns
 const campaignListService = createListService<CampaignsResponse, {
   status?: 'active' | 'paused' | 'completed';
@@ -95,12 +103,7 @@ export async function createCampaign(campaignData: {
     itemCacheManager.invalidate();
     
     // Sync newly created campaign to KV storage
-    try {
-      await syncCampaign(response.id);
-    } catch (syncError) {
-      console.error(`Failed to sync new campaign ${response.id}:`, syncError);
-      // Don't rethrow, as the campaign creation was successful
-    }
+    await syncCampaignSafely(response.id, 'create');
     
     return response;
   } catch (error) {
@@ -132,12 +135,7 @@ export async function updateCampaign(
     itemCacheManager.invalidate();
     
     // Sync campaign to KV storage after any update (status, name, dates, etc.)
-    try {
-      await syncCampaign(id);
-    } catch (syncError) {
-      console.error(`Failed to sync campaign ${id} after update:`, syncError);
-      // Don't rethrow, as the campaign update was successful
-    }
+    await syncCampaignSafely(id, 'update');
     
     return response;
   } catch (error) {
@@ -204,6 +202,22 @@ export async function getCampaignTargetingRules(campaignId: number): Promise<Tar
 }
 
 /**
+ * Replace targeting rules for a campaign and sync to KV storage.
+ */
+export async function updateCampaignTargetingRules(
+  campaignId: number,
+  targetingRules: TargetingRule[]
+): Promise<void> {
+  try {
+    await api.post(`/api/campaigns/${campaignId}/targeting_rules`, targetingRules);
+    await syncCampaignSafely(campaignId, 'targeting rules update');
+  } catch (error) {
+    console.error(`Error updating targeting rules for campaign ${campaignId}:`, error);
+    throw error;
+  }
+}
+
+/**
  * Get payout rules for a campaign by ID
  */
 export async function getCampaignPayoutRules(campaignId: number): Promise<PayoutRule[]> {
@@ -228,6 +242,7 @@ export async function createPayoutRule(
 ): Promise<PayoutRule> {
   try {
     const response = await api.post<PayoutRule>(`/api/campaigns/${campaignId}/payout_rules`, payoutData);
+    await syncCampaignSafely(campaignId, 'payout rule create');
     return response;
   } catch (error) {
     console.error(`Error creating payout rule for campaign ${campaignId}:`, error);
@@ -249,8 +264,9 @@ export async function deletePayoutRule(
       ? `/api/campaigns/${campaignId}/payout_rules?zone_id=${zoneId}`
       : `/api/campaigns/${campaignId}/payout_rules`;
     await api.delete(endpoint);
+    await syncCampaignSafely(campaignId, 'payout rule delete');
   } catch (error) {
     console.error(`Error deleting payout rule for campaign ${campaignId}:`, error);
     throw error;
   }
-} 
+}
