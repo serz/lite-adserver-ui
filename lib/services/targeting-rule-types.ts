@@ -35,4 +35,12 @@ export async function getTargetingRuleTypes(
   };
   
   return response;
-} 
+}
+
+/**
+ * Invalidate targeting rule types cache.
+ * Use on logout/account switch to prevent stale in-memory data.
+ */
+export function invalidateTargetingRuleTypesCache(): void {
+  cachedTargetingRuleTypes = null;
+}

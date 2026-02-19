@@ -22,6 +22,14 @@ import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
 const statsCacheManager = createCacheManager<StatsResponse>();
 
 /**
+ * Invalidate cached stats responses.
+ * Use on logout/account switch to prevent cross-account stale data.
+ */
+export function invalidateStatsCache(): void {
+  statsCacheManager.invalidate();
+}
+
+/**
  * Get current calendar date (y, m, d) in the given timezone.
  */
 function getCalendarDateInTimezone(instant: Date, timeZone: string): { y: number; m: number; d: number } {

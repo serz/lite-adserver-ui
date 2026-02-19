@@ -121,9 +121,6 @@ export default function ZonesPage() {
   };
 
   const handleRefresh = async () => {
-    if (listData) {
-      await listData.refresh();
-    }
     await refetchZones();
   };
 

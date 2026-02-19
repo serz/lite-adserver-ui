@@ -53,6 +53,23 @@ export function StatsPageProvider({ children }: { children: React.ReactNode }) {
   // Add a ref to track if we've already attempted to fetch data
   const dataFetchAttemptedRef = useRef(false);
   const networkErrorRef = useRef(false);
+
+  // Clear in-memory stats page state on logout so account switch starts clean.
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (isAuthenticated && apiInitialized) return;
+
+    setStats(null);
+    setError(null);
+    setIsLoading(false);
+    setCampaignIds([]);
+    setZoneIds([]);
+    setGroupBy('date');
+    setDateRange(null);
+    dateRangeInitializedRef.current = false;
+    dataFetchAttemptedRef.current = false;
+    networkErrorRef.current = false;
+  }, [isAuthReady, isAuthenticated, apiInitialized]);
   
   const fetchStats = useCallback(async (useCache: boolean = true) => {
     // Don't fetch until we have a date range (set after tenant timezone is ready)

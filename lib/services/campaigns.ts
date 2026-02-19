@@ -174,6 +174,15 @@ export async function deleteCampaign(id: number): Promise<void> {
 }
 
 /**
+ * Invalidate all campaign caches.
+ * Use on logout/account switch to prevent cross-account stale data.
+ */
+export function invalidateCampaignCaches(): void {
+  listCacheManager.invalidate();
+  itemCacheManager.invalidate();
+}
+
+/**
  * Get targeting rules for a campaign by ID
  */
 export async function getCampaignTargetingRules(campaignId: number): Promise<TargetingRule[]> {

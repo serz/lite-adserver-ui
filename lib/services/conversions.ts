@@ -1,6 +1,9 @@
 import { ConversionsResponse } from '@/types/api';
 import { createListService, simpleCacheKeyGenerator } from './list-service-factory';
-import { DEFAULT_CACHE_DURATION } from './cache';
+import { createCacheManager, DEFAULT_CACHE_DURATION } from './cache';
+
+// Cache manager for conversions list
+const conversionListCacheManager = createCacheManager<ConversionsResponse>();
 
 // Create the generic list service for conversions
 const conversionListService = createListService<ConversionsResponse, {
@@ -13,6 +16,7 @@ const conversionListService = createListService<ConversionsResponse, {
   endpoint: '/api/conversions',
   cacheKeyGenerator: simpleCacheKeyGenerator,
   cacheDuration: DEFAULT_CACHE_DURATION,
+  cacheManager: conversionListCacheManager,
   queryConfig: {
     omit: ['useCache'],
   },
@@ -29,4 +33,12 @@ export async function getConversions(options?: {
   useCache?: boolean;
 }): Promise<ConversionsResponse> {
   return conversionListService.fetch(options);
+}
+
+/**
+ * Invalidate cached conversions responses.
+ * Use on logout/account switch to prevent cross-account stale data.
+ */
+export function invalidateConversionsCache(): void {
+  conversionListCacheManager.invalidate();
 }

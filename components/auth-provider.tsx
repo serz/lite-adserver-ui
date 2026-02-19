@@ -7,6 +7,11 @@ import { api } from '@/lib/api';
 import { invalidateTenantSettingsCache } from '@/lib/tenant-settings-cache';
 import { validateApiKey } from '@/lib/services/user';
 import { getCachedUserIdentity, setCachedUserIdentity, invalidateUserIdentityCache } from '@/lib/user-identity-cache';
+import { invalidateCampaignCaches } from '@/lib/services/campaigns';
+import { invalidateZoneCaches } from '@/lib/services/zones';
+import { invalidateStatsCache } from '@/lib/services/stats';
+import { invalidateConversionsCache } from '@/lib/services/conversions';
+import { invalidateTargetingRuleTypesCache } from '@/lib/services/targeting-rule-types';
 import type { UserIdentity } from '@/lib/services/user';
 
 interface AuthContextType {
@@ -127,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback((): void => {
     // Clear the API key
     clearApiKey();
+    api.updateApiKey('');
     
     // Clear user identity cache
     invalidateUserIdentityCache();
@@ -134,6 +140,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     // Clear tenant settings cache so next login gets fresh data
     invalidateTenantSettingsCache();
+
+    // Clear all in-memory service caches so account switch cannot reuse old tenant data
+    invalidateCampaignCaches();
+    invalidateZoneCaches();
+    invalidateStatsCache();
+    invalidateConversionsCache();
+    invalidateTargetingRuleTypesCache();
     
     // Update authentication state
     setIsAuthenticated(false);

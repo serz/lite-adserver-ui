@@ -134,6 +134,21 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchZoneData, isAuthReady, isAuthenticated, apiInitialized]);
 
+  // Clear in-memory state on logout so next login cannot reuse previous account data.
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (isAuthenticated && apiInitialized) return;
+
+    dataFetchedRef.current = false;
+    networkErrorRef.current = false;
+    setActiveZonesCount(null);
+    setRecentActiveZones([]);
+    setError(null);
+    setIsLoading(false);
+    listData.setItems([]);
+    listData.setPage(1);
+  }, [isAuthReady, isAuthenticated, apiInitialized, listData]);
+
   const refetchZones = useCallback(async () => {
     dataFetchedRef.current = false;
     networkErrorRef.current = false;

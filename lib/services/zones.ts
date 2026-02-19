@@ -148,6 +148,14 @@ export async function deleteZone(id: number | string): Promise<void> {
 }
 
 /**
+ * Invalidate all zone caches.
+ * Use on logout/account switch to prevent cross-account stale data.
+ */
+export function invalidateZoneCaches(): void {
+  listCacheManager.invalidate();
+}
+
+/**
  * Get a specific zone by ID
  * @param id - Zone ID (number or UUID string)
  */

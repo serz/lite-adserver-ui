@@ -17,8 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Zone } from "@/types/api";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CopyableChip } from "@/components/ui/copyable-chip";
 
 interface ZoneDialogProps {
@@ -182,43 +180,29 @@ export function ZoneDialog({
         traffic_back_url: trafficBackUrl.trim() || undefined,
         postback_url: postbackUrl.trim() || undefined,
       };
-      
-      let response: Zone;
-      
+
       if (mode === 'create') {
         // Create zone
-        response = await createZone(zoneData);
+        await createZone(zoneData);
         
         // Show success toast
         toast({
           title: "Zone created",
           description: `${zoneName} has been successfully created.`,
         });
-        
-        // Call onZoneCreated callback if provided
-        if (onZoneCreated) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await onZoneCreated();
-        }
       } else {
         // Edit zone
         if (!zoneId) {
           throw new Error("Zone ID is required for editing");
         }
         
-        response = await updateZone(zoneId, zoneData);
+        await updateZone(zoneId, zoneData);
         
         // Show success toast
         toast({
           title: "Zone updated",
           description: `${zoneName} has been successfully updated.`,
         });
-        
-        // Call onZoneUpdated callback if provided
-        if (onZoneUpdated) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          await onZoneUpdated();
-        }
       }
       
       // Reset form and close dialog
@@ -226,9 +210,13 @@ export function ZoneDialog({
       setIsOpen(false);
       
       try {
-        // Refetch zones to update the list - with a slight delay to ensure API consistency
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await refetchZones();
+        // Refresh exactly once: prefer parent callback, fallback to context refresh.
+        const refreshCallback = mode === 'create' ? onZoneCreated : onZoneUpdated;
+        if (refreshCallback) {
+          await refreshCallback();
+        } else {
+          await refetchZones();
+        }
       } catch (refreshError) {
         // Still consider the operation successful even if refresh fails
       }

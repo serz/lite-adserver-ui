@@ -119,6 +119,22 @@ export function StatsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchStats, isAuthReady, isAuthenticated, apiInitialized, tenantSettingsLoading, role]);
 
+  // Clear in-memory stats on logout so next login starts from a clean state.
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (isAuthenticated && apiInitialized) return;
+
+    dataFetchedRef.current = false;
+    networkErrorRef.current = false;
+    setImpressions(0);
+    setClicks(0);
+    setConversions(0);
+    setCampaignsCount(0);
+    setZonesCount(0);
+    setError(null);
+    setIsLoading(false);
+  }, [isAuthReady, isAuthenticated, apiInitialized]);
+
   const refetchStats = useCallback(async () => {
     dataFetchedRef.current = false;
     networkErrorRef.current = false;

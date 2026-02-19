@@ -73,9 +73,6 @@ export default function CampaignsPage() {
   }, [fetchTargetingRuleTypes]);
 
   const handleRefresh = async () => {
-    if (listData) {
-      await listData.refresh();
-    }
     await refetchCampaigns();
   };
 

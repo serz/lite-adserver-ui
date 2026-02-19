@@ -132,6 +132,21 @@ export function CampaignProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fetchCampaignData, isAuthReady, isAuthenticated, apiInitialized]);
 
+  // Clear in-memory state on logout so next login cannot reuse previous account data.
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (isAuthenticated && apiInitialized) return;
+
+    dataFetchedRef.current = false;
+    networkErrorRef.current = false;
+    setActiveCampaignsCount(null);
+    setRecentActiveCampaigns([]);
+    setError(null);
+    setIsLoading(false);
+    listData.setItems([]);
+    listData.setPage(1);
+  }, [isAuthReady, isAuthenticated, apiInitialized, listData]);
+
   const refetchCampaigns = useCallback(async () => {
     dataFetchedRef.current = false;
     networkErrorRef.current = false;
