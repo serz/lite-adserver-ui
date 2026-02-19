@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserPlus, Trash2, Key, Mail, Shield, Calendar, Copy, Check, Info, X, RefreshCw } from "lucide-react";
+import { UserPlus, Trash2, Ban, Mail, Shield, Calendar, Copy, Check, Info, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,21 +152,32 @@ export default function TeamPage() {
     setKeyToRevoke(key);
   };
 
+  const isKeyExpired = (key: ApiKey) =>
+    key.expires_at != null && new Date(key.expires_at).getTime() <= Date.now();
+
+  const actionForKey = (key: ApiKey | null): 'revoke' | 'remove' | null =>
+    key ? (isKeyExpired(key) ? 'remove' : 'revoke') : null;
+
   const handleRevokeConfirm = async () => {
     if (!keyToRevoke) return;
+    const action = actionForKey(keyToRevoke);
+    if (!action) return;
     setIsRevoking(true);
     try {
-      await deleteApiKey(keyToRevoke.token);
+      await deleteApiKey(keyToRevoke.token, action);
+      const email = keyToRevoke.email || "Key";
       setKeyToRevoke(null);
       await loadTeamMembers();
       toast({
-        title: "Access revoked",
-        description: `${keyToRevoke.email || "Key"} has been revoked. They can no longer sign in.`,
+        title: action === 'revoke' ? "Access revoked" : "Team member removed",
+        description: action === 'revoke'
+          ? `${email} has been revoked. They can no longer sign in.`
+          : `${email} has been removed from the team.`,
       });
     } catch (err) {
       toast({
         title: "Error",
-        description: err instanceof Error ? err.message : "Failed to remove team member",
+        description: err instanceof Error ? err.message : "Failed to update team member",
         variant: "destructive",
       });
     } finally {
@@ -460,8 +471,16 @@ export default function TeamPage() {
                   <TableCell>
                     {((key.email && key.email === currentUserEmail) || (key.user_id && currentUserId && key.user_id === currentUserId)) ? (
                       <span className="text-muted-foreground/50 text-xs">(you)</span>
-                    ) : (key.expires_at != null && new Date(key.expires_at).getTime() <= Date.now()) ? (
-                      <span className="text-muted-foreground/50 text-xs">Revoked</span>
+                    ) : isKeyExpired(key) ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRevokeClick(key)}
+                        title="Remove from team"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     ) : (
                       <Button
                         variant="ghost"
@@ -470,7 +489,7 @@ export default function TeamPage() {
                         onClick={() => handleRevokeClick(key)}
                         title="Revoke access"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Ban className="h-4 w-4" />
                       </Button>
                     )}
                   </TableCell>
@@ -484,9 +503,13 @@ export default function TeamPage() {
       <Dialog open={!!keyToRevoke} onOpenChange={(open) => !open && handleRevokeCancel()}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Remove team member</DialogTitle>
+            <DialogTitle>
+              {actionForKey(keyToRevoke ?? null) === 'remove' ? 'Remove from team' : 'Revoke access'}
+            </DialogTitle>
             <DialogDescription>
-              Are you sure you want to revoke access for {keyToRevoke?.email || "this key"}? They will lose access immediately. This action cannot be undone.
+              {actionForKey(keyToRevoke ?? null) === 'remove'
+                ? `Permanently remove ${keyToRevoke?.email || "this key"} and their campaigns and zones from the team? This cannot be undone.`
+                : `Are you sure you want to revoke access for ${keyToRevoke?.email || "this key"}? They will lose access immediately. Their campaigns will be paused and zones deactivated.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -494,7 +517,9 @@ export default function TeamPage() {
               Cancel
             </Button>
             <Button variant="destructive" onClick={handleRevokeConfirm} disabled={isRevoking}>
-              {isRevoking ? "Revoking..." : "Revoke access"}
+              {isRevoking
+                ? (actionForKey(keyToRevoke ?? null) === 'remove' ? "Removing..." : "Revoking...")
+                : (actionForKey(keyToRevoke ?? null) === 'remove' ? "Remove" : "Revoke access")}
             </Button>
           </DialogFooter>
         </DialogContent>
