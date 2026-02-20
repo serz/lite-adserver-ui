@@ -22,6 +22,20 @@ jest.mock('@/lib/auth', () => ({
   getApiKey: jest.fn(),
 }));
 
+// Mock tenant settings and namespace so display name is deterministic
+jest.mock('@/lib/use-tenant-settings', () => ({
+  usePublicTenantSettings: jest.fn().mockReturnValue({
+    company: null,
+    primaryColor: null,
+    secondaryColor: null,
+    isLoading: false,
+    error: null,
+  }),
+}));
+jest.mock('@/lib/api', () => ({
+  getNamespace: jest.fn().mockReturnValue('testtenant'),
+}));
+
 // Mock localStorage for direct testing
 interface LocalStorageMock {
   getItem: jest.Mock;
@@ -69,7 +83,7 @@ describe('LoginPage', () => {
   it('renders the login form', () => {
     render(<LoginPage />);
     
-    expect(screen.getByText('Lite Adserver')).toBeInTheDocument();
+    expect(screen.getByText('testtenant')).toBeInTheDocument();
     expect(screen.getByText('Sign in to access your dashboard')).toBeInTheDocument();
     expect(screen.getByLabelText('API Key')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();

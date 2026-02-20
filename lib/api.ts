@@ -78,12 +78,10 @@ export function getNamespace(): string {
 }
 
 /**
- * Tenant display name for UI: namespace with first letter uppercase, or "Lite Adserver" when no namespace (e.g. localhost).
+ * Tenant display name for UI: namespace as-is (no capitalization). Returns empty string when no namespace.
  */
 export function getTenantDisplayName(): string {
-  const ns = getNamespace();
-  if (!ns) return 'Lite Adserver';
-  return ns.charAt(0).toUpperCase() + ns.slice(1).toLowerCase();
+  return getNamespace() ?? '';
 }
 
 /**

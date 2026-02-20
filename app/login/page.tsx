@@ -32,24 +32,17 @@ export default function LoginPage() {
   const [apiKey, setApiKey] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState("Lite Adserver");
+  const [displayName, setDisplayName] = useState("");
   const router = useRouter();
   const { login } = useAuth();
   const { company, primaryColor } = usePublicTenantSettings();
 
-  // Display name: public tenant company, or namespace-derived, or default
+  // Display name: tenant company/brand from settings, or namespace as-is (no placeholder, no capitalization)
   useEffect(() => {
     if (company) {
       setDisplayName(company);
     } else {
-      const namespace = getNamespace();
-      if (namespace) {
-        setDisplayName(
-          namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase()
-        );
-      } else {
-        setDisplayName("Lite Adserver");
-      }
+      setDisplayName(getNamespace() ?? "");
     }
   }, [company]);
 

@@ -34,23 +34,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => setAccountDropdownMounted(true), []);
 
-  // Update display name - prioritize company from settings, fallback to namespace
+  // Display name: tenant company/brand from settings, or namespace as-is (no placeholder, no capitalization)
   useEffect(() => {
-    // Wait for tenant settings to load to avoid showing namespace then company
-    if (tenantLoading) {
-      return;
-    }
-    
+    if (tenantLoading) return;
     if (company) {
       setDisplayName(company);
     } else {
-      const namespace = getNamespace();
-      if (namespace) {
-        // Only capitalize first letter if we're using namespace
-        setDisplayName(namespace.charAt(0).toUpperCase() + namespace.slice(1).toLowerCase());
-      } else {
-        setDisplayName("Lite Adserver");
-      }
+      setDisplayName(getNamespace() ?? "");
     }
   }, [company, tenantLoading]);
   
@@ -97,7 +87,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       >
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center">
-            <span className="text-xl font-bold">{displayName || "Loading..."}</span>
+            <span className="text-xl font-bold">{displayName ?? getNamespace() ?? "Loading..."}</span>
           </div>
           <Button
             variant="ghost"
