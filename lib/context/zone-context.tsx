@@ -135,6 +135,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
   }, [fetchZoneData, isAuthReady, isAuthenticated, apiInitialized]);
 
   // Clear in-memory state on logout so next login cannot reuse previous account data.
+  // Only depend on auth state; listData is omitted to avoid infinite loop (it changes every render).
   useEffect(() => {
     if (!isAuthReady) return;
     if (isAuthenticated && apiInitialized) return;
@@ -147,7 +148,7 @@ export function ZoneProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false);
     listData.setItems([]);
     listData.setPage(1);
-  }, [isAuthReady, isAuthenticated, apiInitialized, listData]);
+  }, [isAuthReady, isAuthenticated, apiInitialized]);
 
   const refetchZones = useCallback(async () => {
     dataFetchedRef.current = false;
